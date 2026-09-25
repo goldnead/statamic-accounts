@@ -41,9 +41,15 @@ class ActivityContributor extends TableContributor implements ErasesPersonalData
         return ['activities'];
     }
 
+    /**
+     * The export needs only the table. The erasure also needs the ledger's
+     * command, which exists in the console, where `accounts:purge` runs;
+     * {@see erase()} refuses without it, and the transaction keeps the
+     * account scheduled.
+     */
     public function available(): bool
     {
-        return parent::available() && array_key_exists('activity:anonymize', Artisan::all());
+        return parent::available();
     }
 
     public function collect(User $user): array
@@ -53,6 +59,10 @@ class ActivityContributor extends TableContributor implements ErasesPersonalData
 
     public function erase(User $user): ErasureResult
     {
+        if (! array_key_exists('activity:anonymize', Artisan::all())) {
+            throw new \RuntimeException('activity:anonymize is not registered; the ledger cannot be anonymised from here.');
+        }
+
         $count = $this->countWhere('activities', fn (Builder $q) => $q->where('user_id', (string) $user->id())->where('anonymized', false));
 
         Artisan::call('activity:anonymize', ['--user' => (string) $user->id()]);
