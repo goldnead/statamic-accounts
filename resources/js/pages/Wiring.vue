@@ -10,6 +10,8 @@ const props = defineProps([
     'events',        // [{ handle, label, description, fields, template: {slug, custom}|null, automations, webhooks }]
     'integrations',  // { email_templates, automations, webhook_manager, activity, identity, brand_context }
     'contributors',  // [{ key, label, available }]
+    'coreMails',     // [{ slug, title, trigger, custom, enabled }]
+    'verificationMail',
     'indexUrl',
     't',
 ]);
@@ -74,6 +76,37 @@ const addons = computed(() => [
                             <TableCell class="align-top text-right tabular-nums">
                                 <span v-if="event.webhooks === null" class="text-xs text-gray-500 dark:text-gray-400">{{ t.not_installed_short }}</span>
                                 <span v-else>{{ event.webhooks }}</span>
+                            </TableCell>
+                        </TableRow>
+                    </TableRows>
+                </Table>
+            </Card>
+        </Panel>
+
+        <Panel v-if="coreMails && coreMails.length" :heading="t.core_mails" :subheading="t.core_mails_intro">
+            <Card>
+                <Table>
+                    <TableColumns>
+                        <TableColumn>{{ t.mail_template }}</TableColumn>
+                        <TableColumn>{{ t.sent_when }}</TableColumn>
+                        <TableColumn>{{ t.status }}</TableColumn>
+                    </TableColumns>
+                    <TableRows>
+                        <TableRow v-for="mail in coreMails" :key="mail.slug">
+                            <TableCell class="align-top">
+                                <div class="font-medium">{{ mail.title }}</div>
+                                <code class="text-xs">{{ mail.slug }}</code>
+                            </TableCell>
+                            <TableCell class="align-top">
+                                {{ mail.trigger }}
+                                <div v-if="mail.slug === 'core-verify-email'" class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                    {{ t.core_verify_email_note }}
+                                </div>
+                            </TableCell>
+                            <TableCell class="align-top">
+                                <Badge v-if="mail.enabled && mail.custom" color="green" :text="t.core_mail_templated" pill />
+                                <Badge v-else-if="mail.enabled" :text="t.core_mail_no_entry" pill />
+                                <Badge v-else :text="t.core_mail_off" pill />
                             </TableCell>
                         </TableRow>
                     </TableRows>

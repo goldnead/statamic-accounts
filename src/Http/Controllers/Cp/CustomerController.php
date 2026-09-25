@@ -13,6 +13,7 @@ use Goldnead\Accounts\Support\Schema as AccountsSchema;
 use Goldnead\Accounts\Support\Users;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -80,7 +81,7 @@ class CustomerController extends CpController
             'wiringUrl' => cp_route('accounts.wiring'),
             'total' => User::query()->count(),
             'setupRequired' => ! $ready,
-            't' => trans('accounts::cp'),
+            't' => Arr::except((array) trans('accounts::cp'), 'labels'),
         ]);
     }
 
@@ -111,7 +112,7 @@ class CustomerController extends CpController
                 'edit' => $me?->can('edit', $customer) ?? false,
             ],
             'graceDays' => (int) config('accounts.deletion.grace_days', 14),
-            't' => trans('accounts::cp'),
+            't' => Arr::except((array) trans('accounts::cp'), 'labels'),
         ]);
     }
 

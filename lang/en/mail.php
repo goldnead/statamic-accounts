@@ -11,8 +11,20 @@
 $button = fn (string $label) => '<p style="margin:24px 0;"><a href="{{ action_url }}" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;">'.$label.'</a></p>';
 
 return [
+    'placeholders' => [
+        'user_name' => 'Name (the address when there is none)',
+        'user_email' => 'Email address of the account',
+        'site_name' => 'Name of the site',
+        'action_url' => 'Signed link (confirm or withdraw)',
+        'expires_in_hours' => 'Link lifetime in hours',
+        'new_email' => 'New address',
+        'old_email' => 'Previous address',
+        'scheduled_for' => 'Date of deletion',
+        'grace_days' => 'Grace period in days',
+    ],
     'verify_email' => [
         'title' => 'Accounts: Confirm email address',
+        'trigger' => 'Account created, or the confirmation link requested again',
         'subject' => 'Please confirm your email address',
         'preview' => 'One click and your account at {{ site_name }} is ready.',
         'description' => 'Sent after registration and on "send again". Placeholders: user.name, user.email, action_url, expires_in_hours.',
@@ -23,6 +35,7 @@ return [
     ],
     'confirm_email_change' => [
         'title' => 'Accounts: Confirm new email address',
+        'trigger' => 'New address entered, sent to the new address',
         'subject' => 'Confirm your new email address',
         'preview' => 'Your new address takes effect after this click.',
         'description' => 'Sent to the new address. Placeholders: user.name, new_email, old_email, action_url, expires_in_hours.',
@@ -33,6 +46,7 @@ return [
     ],
     'email_changed' => [
         'title' => 'Accounts: Notice to the old address',
+        'trigger' => 'New address confirmed, sent to the old address',
         'subject' => 'Your email address was changed',
         'preview' => 'Your account now uses {{ new_email }}.',
         'description' => 'Sent to the old address once the new one is confirmed. Placeholders: user.name, new_email, old_email.',
@@ -42,6 +56,7 @@ return [
     ],
     'deletion_scheduled' => [
         'title' => 'Accounts: Deletion scheduled',
+        'trigger' => 'Deletion of the account requested',
         'subject' => 'Your account will be deleted on {{ scheduled_for }}',
         'preview' => 'Until then you can change your mind.',
         'description' => 'Sent when a deletion is requested. Placeholders: user.name, scheduled_for, grace_days, action_url (withdraw).',
@@ -54,6 +69,7 @@ return [
     ],
     'account_deleted' => [
         'title' => 'Accounts: Account deleted',
+        'trigger' => 'Grace period over, account deleted',
         'subject' => 'Your account is deleted',
         'preview' => 'The grace period has ended.',
         'description' => 'Last mail after deletion. Placeholders: user.name, user.email.',

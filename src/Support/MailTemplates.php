@@ -70,13 +70,21 @@ class MailTemplates
      */
     public function hasEntry(string $key): bool
     {
-        if (! $this->siblingInstalled()) {
+        return $this->hasSlug(static::slug($key));
+    }
+
+    /**
+     * Whether email-templates has an entry under this slug.
+     */
+    public function hasSlug(string $slug): bool
+    {
+        if (! $this->siblingInstalled() || $slug === '') {
             return false;
         }
 
         try {
             $facade = self::FACADE;
-            $template = $facade::resolve(static::slug($key));
+            $template = $facade::resolve($slug);
 
             return $template !== null && ($template->source ?? 'entry') === 'entry';
         } catch (Throwable) {

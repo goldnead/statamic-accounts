@@ -45,6 +45,11 @@ class Settings implements ProvidesSettings
                 'fields' => [
                     static::field('verification.enabled', 'boolean'),
                     static::field('verification.send_on_register', 'boolean'),
+                    static::field('verification.mail', 'select', ['options' => [
+                        'auto' => __('accounts::settings.options.verification_mail.auto'),
+                        'accounts' => __('accounts::settings.options.verification_mail.accounts'),
+                        'laravel' => __('accounts::settings.options.verification_mail.laravel'),
+                    ]]),
                     static::field('verification.expire_minutes', 'integer', ['min' => 5]),
                     static::field('verification.notice_url', 'string'),
                     static::field('email_change.expire_minutes', 'integer', ['min' => 5]),

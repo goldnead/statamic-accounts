@@ -161,10 +161,30 @@ With `goldnead/statamic-automations` installed, every event is an automation tri
 every event is a webhook trigger. Both register through the siblings' own
 `registerEventTrigger()`.
 
+## One confirmation mail, not two
+
+email-templates can also send Laravel's own `VerifyEmail` (template `core-verify-email`).
+To keep a site from sending both, `accounts.verification.mail` picks one line:
+
+- `auto` (default): an Eloquent user model that implements Laravel's `MustVerifyEmail`,
+  on a site with Laravel's `verification.verify` route, gets **Laravel's** notification
+  (`$model->sendEmailVerificationNotification()`); its link goes to the site's own
+  route, and Laravel's `Verified` event is turned into this addon's `EmailVerified`
+  with the same ledger entry. Everyone else, and every Statamic file user (they never
+  implement `MustVerifyEmail`), gets **this addon's** mail `accounts-verify-email`.
+- `accounts` / `laravel`: force one.
+
+Statamic's own registration form does not fire Laravel's `Registered` event, so on a
+Statamic-only site nothing else sends a confirmation. A site that fires `Registered`
+itself (ChoirLive's API does) and also uses `auto` sends exactly one: Laravel's.
+
 ## Mails
 
 Each mail is a template slug in `goldnead/statamic-email-templates`
-(`accounts.mail.templates.*`). A slug without an entry, or a site without that addon,
+(`accounts.mail.templates.*`), announced to its registry (`email-templates.registry`)
+with the occasion ("Accounts: …"), the event, every placeholder with an example, and
+the shipped text, so the template screen explains itself and `email-templates:import`
+writes the defaults. A slug without an entry, or a site without that addon,
 sends the default text shipped in `lang/{de,en}/mail.php`. Placeholders:
 `{{ user.name }}`, `{{ user.email }}`, `{{ action_url }}`, `{{ new_email }}`,
 `{{ old_email }}`, `{{ scheduled_for }}`, `{{ grace_days }}`, `{{ expires_in_hours }}`,

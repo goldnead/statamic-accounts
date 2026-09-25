@@ -111,7 +111,13 @@ class CpTest extends TestCase
                 ->where('overview.entitlements.rows.0.source_label', 'Kauf')
                 ->where('overview.teams.rows.0.role_label', 'Inhaber:in')
                 ->where('overview.activity.rows.0.label', 'E-Mail bestätigt')
-                ->where('overview.activity.rows.1.label', 'Kauf abgeschlossen'));
+                ->where('overview.activity.rows.1.label', 'Kauf abgeschlossen')
+                // The column headings stay strings: the label tables live
+                // apart from them (they once shared the key `status` and the
+                // heading printed as a whole array).
+                ->where('t.status', 'Status')
+                ->where('t.role', 'Rolle')
+                ->missing('t.labels'));
 
         // A type nobody translated reads as words, not as a code. (The
         // request above reset the locale.)

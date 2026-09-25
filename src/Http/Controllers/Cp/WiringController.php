@@ -3,6 +3,7 @@
 namespace Goldnead\Accounts\Http\Controllers\Cp;
 
 use Goldnead\Accounts\Support\Wiring;
+use Illuminate\Support\Arr;
 use Inertia\Inertia;
 use Inertia\Response;
 use Statamic\Http\Controllers\CP\CpController;
@@ -19,7 +20,7 @@ class WiringController extends CpController
 
         return Inertia::render('accounts::Wiring', array_merge($wiring->toArray(), [
             'indexUrl' => cp_route('accounts.index'),
-            't' => trans('accounts::cp'),
+            't' => Arr::except((array) trans('accounts::cp'), 'labels'),
         ]));
     }
 }

@@ -39,3 +39,9 @@ First version.
 - Statuses, intervals, sources, roles and activity types in the customer overview are
   translated.
 - `deletion.grace_days` is at least 1.
+- The five mails register with email-templates' template registry (occasion, event,
+  placeholders with examples, defaults). The wiring screen lists Statamic's and
+  Laravel's own account mails next to them.
+- One confirmation mail: `verification.mail = auto` sends Laravel's `VerifyEmail`
+  (`core-verify-email`) for `MustVerifyEmail` models and this addon's mail otherwise;
+  Laravel's `Verified` event becomes `EmailVerified`.

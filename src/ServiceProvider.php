@@ -9,6 +9,7 @@ use Goldnead\Accounts\Http\Middleware\EnsureEmailIsVerified;
 use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\Integrations\Automations\AutomationsBridge;
 use Goldnead\Accounts\Integrations\EmailTemplates\DefaultTemplateSource;
+use Goldnead\Accounts\Integrations\EmailTemplates\RegistersTemplates;
 use Goldnead\Accounts\Integrations\WebhookManager\WebhookManagerBridge;
 use Goldnead\Accounts\PersonalData\Contributors\AccountContributor;
 use Goldnead\Accounts\PersonalData\Contributors\ActivityContributor;
@@ -158,6 +159,8 @@ class ServiceProvider extends AddonServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'accounts');
 
         $this->app['router']->aliasMiddleware('accounts.verified', EnsureEmailIsVerified::class);
+
+        RegistersTemplates::register();
 
         $this
             ->bootNav()

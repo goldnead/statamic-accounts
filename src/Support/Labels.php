@@ -50,10 +50,10 @@ class Labels
         $unit = strtolower($m[2]);
 
         if ($count === 1) {
-            return __('accounts::cp.interval.every_'.$unit);
+            return __('accounts::cp.labels.interval.every_'.$unit);
         }
 
-        return __('accounts::cp.interval.every_n_'.$unit, ['count' => $count]);
+        return __('accounts::cp.labels.interval.every_n_'.$unit, ['count' => $count]);
     }
 
     /**
@@ -65,7 +65,7 @@ class Labels
     public static function activity(?string $type): string
     {
         $type = (string) $type;
-        $key = 'accounts::cp.activity.'.str_replace('.', '_', $type);
+        $key = 'accounts::cp.labels.activity.'.str_replace('.', '_', $type);
 
         if (trans()->has($key)) {
             return __($key);
@@ -90,7 +90,7 @@ class Labels
             return '';
         }
 
-        $key = 'accounts::cp.'.$group.'.'.$code;
+        $key = 'accounts::cp.labels.'.$group.'.'.$code;
 
         return trans()->has($key) ? __($key) : Str::ucfirst(str_replace(['_', '-'], ' ', $code));
     }

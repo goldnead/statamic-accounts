@@ -22,6 +22,13 @@ class DefaultTemplateSource implements EmailTemplateSource
 
     public function all(): array
     {
+        // A version of email-templates with the registry imports the
+        // registered defaults itself; offering them here too would import
+        // them twice. This source is for older versions only.
+        if (app()->bound(RegistersTemplates::BINDING)) {
+            return [];
+        }
+
         $templates = [];
 
         foreach (MailTemplates::keys() as $key) {

@@ -17,6 +17,7 @@ return [
     ],
     'options' => [
         'active_subscriptions' => ['block' => 'Block the deletion', 'cancel' => 'Cancel the subscriptions'],
+        'verification_mail' => ['auto' => 'Automatic', 'accounts' => 'Always the Accounts mail', 'laravel' => 'Always Laravel\'s VerifyEmail'],
     ],
     'fields' => [
         'verification_enabled' => ['label' => 'Require confirmation', 'description' => 'Off: the accounts.verified middleware lets everyone through and no notice is shown.'],
@@ -25,6 +26,7 @@ return [
         'verification_notice_url' => ['label' => 'Page for unconfirmed accounts', 'description' => 'Where the accounts.verified middleware sends a signed-in user whose address is not confirmed yet.'],
         'email_change_expire_minutes' => ['label' => 'Change link valid for (minutes)', 'description' => 'How long the link to a new address works.'],
         'email_change_notify_old_address' => ['label' => 'Tell the old address', 'description' => 'Sends a notice to the previous address once the new one is confirmed.'],
+        'verification_mail' => ['label' => 'Confirmation mail', 'description' => 'Automatic: Laravel\'s VerifyEmail (template core-verify-email) for user models with MustVerifyEmail, the Accounts mail for everyone else. Never both.'],
         'deletion_grace_days' => ['label' => 'Grace period (days)', 'description' => 'The account is deleted this many days after the request. At least 1, so the withdraw link can be opened.'],
         'deletion_active_subscriptions' => ['label' => 'Running subscriptions', 'description' => 'Block: the deletion is refused, with a link to the customer portal. Cancel: running subscriptions are cancelled through Payments when the deletion is requested.'],
         'deletion_portal_url' => ['label' => 'Customer portal address', 'description' => 'Where the running-subscription notice links to. Empty: the Payments customer portal.'],

@@ -11,8 +11,20 @@
 $button = fn (string $label) => '<p style="margin:24px 0;"><a href="{{ action_url }}" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;">'.$label.'</a></p>';
 
 return [
+    'placeholders' => [
+        'user_name' => 'Name (sonst die Adresse)',
+        'user_email' => 'E-Mail-Adresse des Kontos',
+        'site_name' => 'Name der Website',
+        'action_url' => 'Signierter Link (bestätigen oder zurückziehen)',
+        'expires_in_hours' => 'Gültigkeit des Links in Stunden',
+        'new_email' => 'Neue Adresse',
+        'old_email' => 'Bisherige Adresse',
+        'scheduled_for' => 'Datum der Löschung',
+        'grace_days' => 'Frist in Tagen',
+    ],
     'verify_email' => [
         'title' => 'Konten: E-Mail-Adresse bestätigen',
+        'trigger' => 'Konto wird angelegt oder Bestätigungslink erneut angefordert',
         'subject' => 'Bitte bestätige deine E-Mail-Adresse',
         'preview' => 'Ein Klick, dann ist dein Konto bei {{ site_name }} bereit.',
         'description' => 'Geht nach der Registrierung und bei „Erneut senden“ raus. Platzhalter: user.name, user.email, action_url, expires_in_hours.',
@@ -23,6 +35,7 @@ return [
     ],
     'confirm_email_change' => [
         'title' => 'Konten: Neue E-Mail-Adresse bestätigen',
+        'trigger' => 'Neue Adresse eingetragen, geht an die neue Adresse',
         'subject' => 'Bestätige deine neue E-Mail-Adresse',
         'preview' => 'Deine neue Adresse gilt erst nach diesem Klick.',
         'description' => 'Geht an die neue Adresse. Platzhalter: user.name, new_email, old_email, action_url, expires_in_hours.',
@@ -33,6 +46,7 @@ return [
     ],
     'email_changed' => [
         'title' => 'Konten: Hinweis an die alte Adresse',
+        'trigger' => 'Neue Adresse bestätigt, geht an die alte Adresse',
         'subject' => 'Deine E-Mail-Adresse wurde geändert',
         'preview' => 'Dein Konto läuft jetzt über {{ new_email }}.',
         'description' => 'Geht an die alte Adresse, nachdem die neue bestätigt ist. Platzhalter: user.name, new_email, old_email.',
@@ -42,6 +56,7 @@ return [
     ],
     'deletion_scheduled' => [
         'title' => 'Konten: Löschung vorgemerkt',
+        'trigger' => 'Löschung des Kontos beantragt',
         'subject' => 'Dein Konto wird am {{ scheduled_for }} gelöscht',
         'preview' => 'Bis dahin kannst du es dir anders überlegen.',
         'description' => 'Geht raus, sobald eine Löschung beantragt ist. Platzhalter: user.name, scheduled_for, grace_days, action_url (zurückziehen).',
@@ -54,6 +69,7 @@ return [
     ],
     'account_deleted' => [
         'title' => 'Konten: Konto gelöscht',
+        'trigger' => 'Frist abgelaufen, Konto gelöscht',
         'subject' => 'Dein Konto ist gelöscht',
         'preview' => 'Die Frist ist abgelaufen.',
         'description' => 'Letzte Mail nach der Löschung. Platzhalter: user.name, user.email.',

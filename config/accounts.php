@@ -21,6 +21,13 @@ return [
     'verification' => [
         'enabled' => true,
         'field' => 'email_verified_at',
+
+        // Which mail confirms the address. `auto`: Laravel's VerifyEmail
+        // (email-templates: `core-verify-email`) for an Eloquent model that
+        // implements MustVerifyEmail on a site with a `verification.verify`
+        // route, this addon's mail for everyone else. `accounts` or
+        // `laravel` to force one.
+        'mail' => 'auto',
         'send_on_register' => true,
         'expire_minutes' => 60 * 24,
         'notice_url' => '/',

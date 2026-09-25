@@ -4,6 +4,7 @@ namespace Goldnead\Accounts\Support;
 
 use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\Integrations\Automations\AutomationsBridge;
+use Goldnead\Accounts\Integrations\EmailTemplates\RegistersTemplates as RegistersTemplatesBinding;
 use Goldnead\Accounts\Integrations\WebhookManager\WebhookManagerBridge;
 use Goldnead\Accounts\PersonalData\PersonalDataRegistry;
 use Illuminate\Support\Facades\DB;
@@ -82,12 +83,76 @@ class Wiring
                     'url' => $this->cpRoute('brand-context.settings.index'),
                 ],
             ],
+            'coreMails' => $this->coreMails(),
+            'verificationMail' => (string) config('accounts.verification.mail', 'auto'),
             'contributors' => array_values(array_map(fn ($contributor) => [
                 'key' => $contributor->key(),
                 'label' => $contributor->label(),
                 'available' => $contributor->available(),
             ], $this->personalData->all())),
         ];
+    }
+
+    /**
+     * The account mails Statamic and Laravel send themselves (password reset,
+     * activation, `VerifyEmail`, …), as email-templates registers them under
+     * the addon name "Statamic". They sit next to this addon's own mails in
+     * an account's life, so they are shown here; which of them are sent from
+     * a template is email-templates' `core_mails.enabled`.
+     *
+     * @return list<array{slug: string, title: string, trigger: string, custom: bool, enabled: bool}>
+     */
+    protected function coreMails(): array
+    {
+        if (! app()->bound(RegistersTemplatesBinding::BINDING)) {
+            return [];
+        }
+
+        try {
+            $registry = app(RegistersTemplatesBinding::BINDING);
+            $groups = method_exists($registry, 'byAddon') ? $registry->byAddon() : [];
+        } catch (Throwable) {
+            return [];
+        }
+
+        $enabled = (bool) config('email-templates.core_mails.enabled', false);
+
+        return array_values(array_map(function ($definition) use ($enabled) {
+            $read = fn (string $field) => $this->readDefinition($definition, $field);
+            $slug = $read('slug');
+
+            return [
+                'slug' => $slug,
+                'title' => $read('title'),
+                'trigger' => $read('trigger'),
+                'custom' => $this->templates->hasSlug($slug),
+                'enabled' => $enabled,
+            ];
+        }, $groups['Statamic'] ?? []));
+    }
+
+    /**
+     * A definition is email-templates' `TemplateDefinition` (methods, or a
+     * public `slug`), or an array in a stand-in. Read either without naming
+     * the sibling's class.
+     */
+    protected function readDefinition(mixed $definition, string $field): string
+    {
+        if (is_array($definition)) {
+            $value = $definition[$field] ?? '';
+        } elseif (is_object($definition) && method_exists($definition, $field)) {
+            $value = $definition->{$field}();
+        } elseif (is_object($definition) && isset($definition->{$field})) {
+            $value = $definition->{$field};
+        } else {
+            $value = '';
+        }
+
+        if ($value instanceof \Closure) {
+            $value = $value();
+        }
+
+        return is_scalar($value) ? (string) $value : '';
     }
 
     protected function countAutomations(string $handle): ?int
