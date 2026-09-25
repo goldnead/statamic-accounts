@@ -215,7 +215,7 @@ const statusColor = (status) => ({
                             <dd class="flex flex-wrap gap-1">
                                 <Badge v-if="account.verified" color="green" :text="t.verified" pill />
                                 <Badge v-else color="amber" :text="t.unverified" pill />
-                                <Badge v-if="account.deletion_due && account.deletion_state === 'blocked'" color="amber" :text="replace(t.deletion_blocked_since, { date: account.deletion_due })" pill />
+                                <Badge v-if="account.deletion_due && account.deletion_state === 'blocked'" color="amber" :text="t.deletion_blocked_badge" :title="replace(t.deletion_blocked_since, { date: account.deletion_due })" pill />
                                 <Badge v-else-if="account.deletion_due" color="red" :text="replace(t.deletion_due, { date: account.deletion_due })" pill />
                             </dd>
                             <template v-if="account.verified_at">
@@ -227,6 +227,10 @@ const statusColor = (status) => ({
                             <template v-if="account.roles && account.roles.length">
                                 <dt class="text-gray-600 dark:text-gray-400">{{ t.roles }}</dt>
                                 <dd>{{ account.roles.join(', ') }}</dd>
+                            </template>
+                            <template v-if="account.deletion_due && account.deletion_state === 'blocked'">
+                                <dt class="text-gray-600 dark:text-gray-400">{{ t.deletion_due_label }}</dt>
+                                <dd class="tabular-nums">{{ account.deletion_due }}</dd>
                             </template>
                             <template v-if="account.pending_email">
                                 <dt class="text-gray-600 dark:text-gray-400">{{ t.pending_email }}</dt>

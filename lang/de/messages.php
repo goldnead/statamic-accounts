@@ -50,7 +50,7 @@ return [
     'blocker_subscription_admin' => 'Das Konto hat ein laufendes Abo „:product“. Es muss erst gekündigt werden.',
     'blocker_subscription_portal_admin' => 'Das Konto hat ein laufendes Abo „:product“. Die Person kann es im Kundenportal kündigen: :url',
     'blocker_subscription_cancel_failed_admin' => 'Das Abo „:product“ ließ sich nicht automatisch kündigen.',
-    'blocker_team_owner_admin' => 'Das Konto ist einzige Inhaberschaft von „:team“ mit :count weiteren Mitgliedern. Die Inhaberschaft muss erst übertragen werden.',
+    'blocker_team_owner_admin' => 'Das Konto hält „:team“ allein, und das Team hat :count weitere Mitglieder. Die Inhaberschaft muss erst übertragen werden.',
     'blocker_team_owner' => 'Du bist die einzige Inhaberin oder der einzige Inhaber von „:team“ mit :count weiteren Mitgliedern. Übertrage die Inhaberschaft zuerst.',
 
     'retained_payments' => 'Zahlungen und Abos bleiben mit Name und Adresse zehn Jahre gespeichert (§ 147 AO, § 14b UStG).',
