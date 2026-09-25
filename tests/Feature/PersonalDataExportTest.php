@@ -20,6 +20,10 @@ class PersonalDataExportTest extends TestCase
 
     protected function setUp(): void
     {
+        // The activity stand-in, so the ledger section is there whether or
+        // not an earlier test loaded it.
+        require_once __DIR__.'/../Fakes/siblings.php';
+
         parent::setUp();
 
         $this->createSiblingTables();
@@ -80,7 +84,7 @@ class PersonalDataExportTest extends TestCase
 
         $this->assertStringEndsWith('.zip', $file['filename']);
         $this->assertEqualsCanonicalizing(
-            ['manifest.json', 'account.json', 'payments.json', 'invoices.json', 'entitlements.json', 'leadhub.json', 'notifications.json', 'teams.json', 'courses.json'],
+            ['manifest.json', 'account.json', 'payments.json', 'invoices.json', 'entitlements.json', 'leadhub.json', 'notifications.json', 'teams.json', 'activity.json', 'courses.json'],
             array_keys($files),
         );
 
