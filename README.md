@@ -339,7 +339,7 @@ who really acted.
 | `deletion.logout` | `false` | Sign out after requesting |
 | `deletion.redirect` | `/` | Where the withdraw link lands |
 | `export.enabled` | `true` | Off: the customer's export answers 404 (the CP export stays) |
-| `export.throttle` | `3,60` | |
+| `export.throttle` | `3,60` | The customer's download: at most 3 per 60 minutes per person (`max,minutes`); more answers 429. The CP export is not limited |
 | `mail.templates.*` | `accounts-…` | Slugs in email-templates |
 | `impersonation.redirect` | `/` | Landing page for a customer without CP access |
 | `integrations.automations` / `webhook_manager` / `activity` | `true` | Read while booting |

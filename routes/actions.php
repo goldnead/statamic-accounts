@@ -48,6 +48,10 @@ Route::name('accounts.')->group(function () {
     Route::post('deletion/withdraw', [AccountController::class, 'withdrawDeletion'])
         ->name('deletion.withdraw');
 
+    // Limited by `accounts.export.throttle` ("max,minutes", per person),
+    // through the named limiter the provider defines. Named, so the value is
+    // read at request time and a change in the settings layer applies.
     Route::get('export', [AccountController::class, 'export'])
+        ->middleware('throttle:accounts-export')
         ->name('export');
 });

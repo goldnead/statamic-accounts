@@ -86,6 +86,9 @@ return [
 
     'export' => [
         'enabled' => true,
+        // The customer's own download: "max,minutes" per person. `enabled`
+        // switches only that download off; the Control Panel export (for
+        // answering requests under Art. 15 GDPR) always stays.
         'throttle' => '3,60',
     ],
 

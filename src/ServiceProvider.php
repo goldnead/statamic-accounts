@@ -22,7 +22,10 @@ use Goldnead\Accounts\PersonalData\Contributors\TeamsContributor;
 use Goldnead\Accounts\PersonalData\ErasureRegistry;
 use Goldnead\Accounts\PersonalData\PersonalDataRegistry;
 use Goldnead\Accounts\Support\Settings;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Statamic\Facades\CP\Nav;
 use Statamic\Facades\Permission;
 use Statamic\Providers\AddonServiceProvider;
@@ -159,6 +162,15 @@ class ServiceProvider extends AddonServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'accounts');
 
         $this->app['router']->aliasMiddleware('accounts.verified', EnsureEmailIsVerified::class);
+
+        // `accounts.export.throttle` = "max,minutes", per signed-in person
+        // (the IP for a guest, who gets a 403 anyway). Read per request.
+        RateLimiter::for('accounts-export', function (Request $request) {
+            [$max, $minutes] = array_map('intval', array_pad(explode(',', (string) config('accounts.export.throttle', '3,60')), 2, 60));
+
+            return Limit::perMinutes(max(1, $minutes), max(1, $max))
+                ->by('accounts-export|'.($request->user()?->getAuthIdentifier() ?? $request->ip()));
+        });
 
         RegistersTemplates::register();
 

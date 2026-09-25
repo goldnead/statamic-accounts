@@ -115,7 +115,10 @@ class CustomerController extends CpController
             'can' => [
                 'manage' => $me?->can('manage accounts') ?? false,
                 'delete' => $this->mayDelete($customer),
-                'export' => ($me?->can('export account data') ?? false) && config('accounts.export.enabled', true),
+                // Independent of `export.enabled`, which only concerns the
+                // customer's own download: an admin answering an Art. 15
+                // request must always be able to export.
+                'export' => $me?->can('export account data') ?? false,
                 'impersonate' => $me !== null && $impersonation->allowed($me, $customer),
                 'edit' => $me?->can('edit', $customer) ?? false,
             ],
@@ -126,8 +129,8 @@ class CustomerController extends CpController
 
     public function export(PersonalDataExport $export, string $user): BinaryFileResponse
     {
+        // No `export.enabled` check here, see show().
         $this->authorize('export account data');
-        abort_unless(config('accounts.export.enabled', true), 404);
 
         $file = $export->build($this->find($user), 'admin', Users::current());
 

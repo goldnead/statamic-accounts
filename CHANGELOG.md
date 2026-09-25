@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1 — 2026-09-25
+
+- `export.throttle` is applied: the customer's download is limited per person
+  (`max,minutes`, default 3 per 60 minutes), read per request through the named rate
+  limiter `accounts-export`. Before, the setting was not read and the route was
+  unlimited.
+- `export.enabled = false` switches off only the customer's download, as the README
+  says. The Control Panel export for admins with `export account data` stays, so a
+  request under Art. 15 GDPR can always be answered.
+
 ## 0.1.0 — 2026-09-25
 
 First version.
