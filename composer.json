@@ -1,0 +1,100 @@
+{
+    "name": "goldnead/statamic-accounts",
+    "description": "Accounts for Statamic: email verification, email change with confirmation, account deletion with a grace period, a personal data export every addon contributes to, and a customer overview in the Control Panel.",
+    "type": "statamic-addon",
+    "license": "proprietary",
+    "keywords": [
+        "statamic",
+        "statamic-addon",
+        "accounts",
+        "email-verification",
+        "gdpr",
+        "data-export",
+        "account-deletion"
+    ],
+    "authors": [
+        {
+            "name": "Adrian Goldner",
+            "email": "info@adriangoldner.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/goldnead/statamic-accounts/issues",
+        "source": "https://github.com/goldnead/statamic-accounts"
+    },
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.40|^13.0",
+        "statamic/cms": "^6.0"
+    },
+    "require-dev": {
+        "goldnead/statamic-brand-context": "^1.13",
+        "goldnead/statamic-identity-contracts": "^1.2",
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^10.0 || ^11.0",
+        "phpunit/phpunit": "^11.0 || ^12.0"
+    },
+    "suggest": {
+        "ext-zip": "Delivers the personal data export as a ZIP with one JSON file per addon. Without it the export is a single JSON file.",
+        "goldnead/statamic-brand-context": "Makes the grace period, link lifetimes and mail templates editable per brand under Settings.",
+        "goldnead/statamic-email-templates": "Lets editors write every account mail in the Control Panel.",
+        "goldnead/statamic-activity": "Records verifications, email changes, deletions, exports and impersonations in the activity ledger.",
+        "goldnead/statamic-identity-contracts": "Attributes everything done while impersonating to the customer, with the admin named alongside.",
+        "goldnead/statamic-automations": "Adds every account event as an automation trigger.",
+        "goldnead/statamic-webhook-manager": "Adds every account event as a webhook trigger.",
+        "goldnead/statamic-payments": "Payments and subscriptions in the customer overview and the data export.",
+        "goldnead/statamic-entitlements": "Access grants in the customer overview and the data export.",
+        "goldnead/statamic-leadhub": "The CRM contact in the customer overview and the data export.",
+        "goldnead/statamic-notifications": "Notifications and preferences in the data export.",
+        "goldnead/statamic-teams": "Team memberships in the customer overview and the data export."
+    },
+    "autoload": {
+        "psr-4": {
+            "Goldnead\\Accounts\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Goldnead\\Accounts\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "Accounts",
+            "description": "Email verification, email change, account deletion with a grace period, a personal data export and a customer overview.",
+            "url": "https://github.com/goldnead/statamic-accounts",
+            "developer": "Adrian Goldner",
+            "developer-url": "https://adriangoldner.dev"
+        },
+        "laravel": {
+            "providers": [
+                "Goldnead\\Accounts\\ServiceProvider"
+            ],
+            "aliases": {
+                "Accounts": "Goldnead\\Accounts\\Facades\\Accounts"
+            }
+        }
+    },
+    "scripts": {
+        "test": [
+            "@php vendor/bin/phpunit"
+        ],
+        "lint": [
+            "@php vendor/bin/pint --test"
+        ],
+        "analyse": [
+            "@php vendor/bin/phpstan analyse"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/installers": true,
+            "php-http/discovery": true,
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
