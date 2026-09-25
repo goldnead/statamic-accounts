@@ -72,7 +72,7 @@ class PersonalDataExport
     {
         $export = $this->collect($user);
         $stamp = now()->format('Y-m-d');
-        $base = 'personal-data-'.Str::slug((string) $user->email()).'-'.$stamp;
+        $base = 'personal-data-'.Str::slug(str_replace(['@', '.'], '-', (string) $user->email())).'-'.$stamp;
         $path = tempnam(sys_get_temp_dir(), 'accounts-export-');
 
         if ($path === false) {
