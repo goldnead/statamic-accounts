@@ -36,6 +36,7 @@ return [
         'mail_templates_confirm_email_change' => ['label' => 'Confirm new address', 'description' => 'Slug of the mail to the new address.'],
         'mail_templates_email_changed' => ['label' => 'Address changed', 'description' => 'Slug of the notice to the old address.'],
         'mail_templates_deletion_scheduled' => ['label' => 'Deletion scheduled', 'description' => 'Slug of the mail with the link to withdraw.'],
+        'mail_templates_deletion_blocked' => ['label' => 'Deletion blocked', 'description' => 'Slug of the mail when a due deletion is blocked.'],
         'mail_templates_account_deleted' => ['label' => 'Account deleted', 'description' => 'Slug of the last mail.'],
     ],
 ];

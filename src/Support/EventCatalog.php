@@ -3,6 +3,7 @@
 namespace Goldnead\Accounts\Support;
 
 use Goldnead\Accounts\Events\AccountDeleted;
+use Goldnead\Accounts\Events\AccountDeletionBlocked;
 use Goldnead\Accounts\Events\AccountDeletionCancelled;
 use Goldnead\Accounts\Events\AccountDeletionRequested;
 use Goldnead\Accounts\Events\AccountEvent;
@@ -36,6 +37,7 @@ class EventCatalog
         EmailChanged::class => 'email_changed',
         AccountDeletionRequested::class => 'deletion_scheduled',
         AccountDeletionCancelled::class => null,
+        AccountDeletionBlocked::class => 'deletion_blocked',
         AccountDeleted::class => 'account_deleted',
         PersonalDataExported::class => null,
     ];
@@ -49,6 +51,7 @@ class EventCatalog
         EmailChangeRequested::class => ['new_email' => 'string'],
         EmailChanged::class => ['old_email' => 'string'],
         AccountDeletionRequested::class => ['scheduled_for' => 'datetime'],
+        AccountDeletionBlocked::class => ['reasons' => 'integer'],
         PersonalDataExported::class => ['sections' => 'array', 'requested_by' => 'string'],
     ];
 

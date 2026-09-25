@@ -72,18 +72,36 @@ class ErasureTest extends TestCase
         $this->endSubscriptions();
         $id = (string) $user->id();
 
+        // An earlier, withdrawn request and an address change: their rows
+        // must not keep the name either.
+        Accounts::emailChange()->request($user, 'neu@example.com');
+        Accounts::deletion()->request($user);
+        Accounts::deletion()->cancel($user);
+
         $request = Accounts::deletion()->request($user);
         $this->travel(15)->days();
 
         $this->assertSame(1, Accounts::deletion()->purgeDue());
         $this->assertNull(User::find($id));
 
-        $this->assertSame([], $this->rowsNaming($id, 'sina@example.com', ['payments', 'payment_items', 'subscriptions', 'invoices', 'account_requests']));
+        $retained = ['payments', 'payment_items', 'subscriptions', 'invoices'];
 
-        // This addon keeps exactly one row: the deletion record, by id, with
-        // no address.
-        $this->assertSame(1, AccountRequest::query()->where('user_id', $id)->count());
-        $this->assertNull($request->fresh()->email);
+        // Address and name: nowhere outside the retained records, this
+        // addon's own table included.
+        $this->assertSame([], $this->rowsNaming('no-id-check', 'sina@example.com', $retained));
+        $this->assertSame([], $this->rowsNaming('no-id-check', 'Sina Sänger', $retained));
+        $this->assertSame([], $this->rowsNaming('no-id-check', 'Sina', $retained));
+
+        // The id: only in the deletion record, where it is pseudonymous (it
+        // points at an account that no longer exists).
+        $this->assertSame([], $this->rowsNaming($id, 'no-address-check@invalid', array_merge($retained, ['account_requests'])));
+        // Two deletion rows stay (the withdrawn one and this one), the
+        // address change is gone; none carries an address, only this one
+        // carries meta (the erasure counts).
+        $this->assertSame(2, AccountRequest::query()->where('user_id', $id)->count());
+        $this->assertSame(0, AccountRequest::query()->where('user_id', $id)->where('type', '!=', AccountRequest::TYPE_DELETION)->count());
+        $this->assertSame(0, AccountRequest::query()->where('user_id', $id)->whereNotNull('email')->count());
+        $this->assertSame(1, AccountRequest::query()->where('user_id', $id)->whereNotNull('meta')->count());
 
         // Retained, untouched.
         $this->assertSame(1, DB::table('payments')->whereRaw('lower(email) = ?', ['sina@example.com'])->count());
@@ -136,9 +154,15 @@ class ErasureTest extends TestCase
 
         Subscriptions::$cancelled = [];
 
+        // The request goes through: the subscription is no blocker with
+        // this policy, and nothing is cancelled yet.
         Accounts::deletion()->request($user);
-
         $this->assertNotNull(Accounts::deletion()->pending($user));
+        $this->assertCount(0, Subscriptions::$cancelled);
+
+        // Cancelled right before the erasure.
+        $this->travel(15)->days();
+        $this->assertSame(1, Accounts::deletion()->purgeDue());
         $this->assertCount(1, Subscriptions::$cancelled);
     }
 

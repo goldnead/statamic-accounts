@@ -26,7 +26,7 @@ class MailTemplates
      *
      * @var list<string>
      */
-    public const RAW_VARIABLES = ['action_url'];
+    public const RAW_VARIABLES = ['action_url', 'reasons_list'];
 
     /**
      * @return list<string>

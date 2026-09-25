@@ -36,6 +36,7 @@ return [
         'mail_templates_confirm_email_change' => ['label' => 'Neue Adresse bestätigen', 'description' => 'Slug der Mail an die neue Adresse.'],
         'mail_templates_email_changed' => ['label' => 'Adresse geändert', 'description' => 'Slug des Hinweises an die alte Adresse.'],
         'mail_templates_deletion_scheduled' => ['label' => 'Löschung vorgemerkt', 'description' => 'Slug der Mail mit dem Link zum Zurückziehen.'],
+        'mail_templates_deletion_blocked' => ['label' => 'Löschung blockiert', 'description' => 'Slug der Mail, wenn eine fällige Löschung blockiert ist.'],
         'mail_templates_account_deleted' => ['label' => 'Konto gelöscht', 'description' => 'Slug der letzten Mail.'],
     ],
 ];

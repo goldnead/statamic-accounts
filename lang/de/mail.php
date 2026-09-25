@@ -21,6 +21,7 @@ return [
         'old_email' => 'Bisherige Adresse',
         'scheduled_for' => 'Datum der Löschung',
         'grace_days' => 'Frist in Tagen',
+        'reasons_list' => 'Was der Löschung im Weg steht (fertige Liste)',
     ],
     'verify_email' => [
         'title' => 'Konten: E-Mail-Adresse bestätigen',
@@ -65,6 +66,19 @@ return [
             .'<p><strong>Was wir löschen:</strong> dein Konto, deine Zugänge, deine Mitgliedschaften in Teams, deinen Kontakt im CRM mit Notizen und Verlauf, deine Benachrichtigungen und Einstellungen. Einträge im Protokoll werden anonymisiert.</p>'
             .'<p><strong>Was bleibt:</strong> Rechnungen und Zahlungsbelege mit Name und Adresse. Die müssen wir zehn Jahre aufbewahren (§ 147 AO, § 14b UStG). Danach werden sie gelöscht.</p>'
             .'<p>Bis zum {{ scheduled_for }} kannst du den Antrag zurückziehen:</p>'
+            .$button('Konto behalten'),
+    ],
+    'deletion_blocked' => [
+        'title' => 'Konten: Löschung blockiert',
+        'trigger' => 'Löschung fällig, aber etwas steht im Weg',
+        'subject' => 'Wir konnten dein Konto noch nicht löschen',
+        'preview' => 'Es steht noch etwas im Weg.',
+        'description' => 'Geht einmal raus, wenn eine fällige Löschung blockiert ist. Platzhalter: user.name, reasons_list (fertige Liste), action_url (zurückziehen).',
+        'body' => '<p>Hallo {{ user.name }},</p>'
+            .'<p>du hast die Löschung deines Kontos bei {{ site_name }} beantragt. Die Frist ist um, aber wir können es noch nicht löschen:</p>'
+            .'{{ reasons_list }}'
+            .'<p>Sobald das erledigt ist, löschen wir dein Konto beim nächsten täglichen Lauf, ohne dass du noch etwas tun musst.</p>'
+            .'<p>Wenn du dein Konto doch behalten willst:</p>'
             .$button('Konto behalten'),
     ],
     'account_deleted' => [

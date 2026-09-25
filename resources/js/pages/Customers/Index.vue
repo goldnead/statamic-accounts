@@ -74,7 +74,8 @@ function replace(text, values) {
                 </template>
 
                 <template #cell-deletion_due="{ row }">
-                    <Badge v-if="row.deletion_due" color="red" :text="row.deletion_due" pill />
+                    <Badge v-if="row.deletion_due && row.deletion_blocked" color="amber" :text="replace(t.deletion_blocked_short, { date: row.deletion_due })" pill />
+                    <Badge v-else-if="row.deletion_due" color="red" :text="row.deletion_due" pill />
                     <span v-else class="text-gray-400 dark:text-gray-600">–</span>
                 </template>
 

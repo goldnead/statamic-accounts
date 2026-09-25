@@ -21,6 +21,7 @@ return [
         'old_email' => 'Previous address',
         'scheduled_for' => 'Date of deletion',
         'grace_days' => 'Grace period in days',
+        'reasons_list' => 'What stands in the way (ready-made list)',
     ],
     'verify_email' => [
         'title' => 'Accounts: Confirm email address',
@@ -65,6 +66,19 @@ return [
             .'<p><strong>What we delete:</strong> your account, your access grants, your team memberships, your CRM contact with its notes and history, your notifications and preferences. Activity log entries are anonymised.</p>'
             .'<p><strong>What stays:</strong> invoices and payment records with name and address. We have to keep them for ten years (§ 147 AO, § 14b UStG). After that they are deleted.</p>'
             .'<p>Until {{ scheduled_for }} you can withdraw the request:</p>'
+            .$button('Keep my account'),
+    ],
+    'deletion_blocked' => [
+        'title' => 'Accounts: Deletion blocked',
+        'trigger' => 'Deletion due, but something stands in the way',
+        'subject' => 'We could not delete your account yet',
+        'preview' => 'Something still stands in the way.',
+        'description' => 'Sent once when a due deletion is blocked. Placeholders: user.name, reasons_list (ready-made list), action_url (withdraw).',
+        'body' => '<p>Hi {{ user.name }},</p>'
+            .'<p>you asked us to delete your account at {{ site_name }}. The grace period is over, but we cannot delete it yet:</p>'
+            .'{{ reasons_list }}'
+            .'<p>Once that is sorted, we delete your account on the next daily run, without you having to do anything.</p>'
+            .'<p>If you would rather keep your account:</p>'
             .$button('Keep my account'),
     ],
     'account_deleted' => [

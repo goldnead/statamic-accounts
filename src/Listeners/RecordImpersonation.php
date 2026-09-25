@@ -24,13 +24,16 @@ class RecordImpersonation
         $this->record('accounts.impersonation_ended', $event->impersonator, $event->impersonated);
     }
 
+    /**
+     * Ids only, no addresses: the entry is written under the admin's user id,
+     * which the ledger's anonymisation of the customer does not reach. The
+     * customer's id stays in it, pseudonymous once the account is deleted.
+     */
     protected function record(string $type, mixed $impersonator, mixed $impersonated): void
     {
         $this->activity->record($type, [
             'impersonator_id' => $this->id($impersonator),
-            'impersonator_email' => $this->email($impersonator),
             'user_id' => $this->id($impersonated),
-            'email' => $this->email($impersonated),
         ], $impersonator);
     }
 
@@ -45,14 +48,5 @@ class RecordImpersonation
         }
 
         return null;
-    }
-
-    protected function email(mixed $user): ?string
-    {
-        if (is_object($user) && method_exists($user, 'email')) {
-            return (string) $user->email();
-        }
-
-        return is_object($user) ? (data_get($user, 'email') ?: null) : null;
     }
 }

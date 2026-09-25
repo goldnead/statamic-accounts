@@ -25,13 +25,14 @@ interface ErasesPersonalData
     public function available(): bool;
 
     /**
-     * Reasons the account cannot be deleted yet, as sentences for the
-     * customer. Empty means go. Asked when the deletion is requested and
-     * again when it is due.
+     * Reasons the account cannot be deleted yet, as sentences. Empty means
+     * go. Asked when the deletion is requested and again when it is due.
+     * `$audience` is `customer` (addressed as "you") or `admin` (the account
+     * in the third person, for the Control Panel).
      *
      * @return list<string>
      */
-    public function blockers(User $user): array;
+    public function blockers(User $user, string $audience = 'customer'): array;
 
     /**
      * Delete or anonymise this addon's data about the user, and say what was

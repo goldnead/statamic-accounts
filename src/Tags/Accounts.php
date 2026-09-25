@@ -2,12 +2,10 @@
 
 namespace Goldnead\Accounts\Tags;
 
-use Goldnead\Accounts\PersonalData\ErasureRegistry;
 use Goldnead\Accounts\Services\AccountDeletion;
 use Goldnead\Accounts\Services\EmailChange;
 use Goldnead\Accounts\Services\EmailVerification;
 use Goldnead\Accounts\Services\Impersonation;
-use Goldnead\Accounts\Services\PersonalDataErasure;
 use Goldnead\Accounts\Support\Users as User;
 use Illuminate\Contracts\Support\MessageBag as MessageBagContract;
 use Illuminate\Support\MessageBag;
@@ -102,7 +100,10 @@ class Accounts extends Tags
      * running subscription, a team the person holds alone); submitting while
      * there are any shows them as `error:account`.
      *
-     * Variables: `pending`, `scheduled_for`, `grace_days`, `blockers`,
+     * `blocked` is true when the deletion was due but something stood in the
+     * way; the form still withdraws it.
+     *
+     * Variables: `pending`, `blocked`, `scheduled_for`, `grace_days`, `blockers`,
      * `elevated`, `locked`, `success`, `errors`, `error`.
      */
     public function deleteForm(): string
@@ -126,27 +127,10 @@ class Accounts extends Tags
             'grace_days' => $deletion->graceDays(),
             // Asked only while nothing is pending. With the `cancel` policy
             // this does not cancel anything: that happens on submit.
-            'blockers' => $pending === null ? $this->blockersWithoutSideEffects($user) : [],
+            'blockers' => $pending === null || $pending->isBlocked() ? $deletion->blockers($user) : [],
+            'blocked' => $pending?->isBlocked() ?? false,
             ...$this->confirmationState(),
         ]);
-    }
-
-    /**
-     * @return list<string>
-     */
-    protected function blockersWithoutSideEffects(\Statamic\Auth\User $user): array
-    {
-        $blockers = [];
-
-        foreach (app(ErasureRegistry::class)->available() as $key => $eraser) {
-            if ($key === 'payments' && app(PersonalDataErasure::class)->subscriptionPolicy() === 'cancel') {
-                continue;
-            }
-
-            $blockers = array_merge($blockers, $eraser->blockers($user));
-        }
-
-        return $blockers;
     }
 
     /**

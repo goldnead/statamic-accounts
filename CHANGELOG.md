@@ -42,6 +42,17 @@ First version.
 - The five mails register with email-templates' template registry (occasion, event,
   placeholders with examples, defaults). The wiring screen lists Statamic's and
   Laravel's own account mails next to them.
+- A due deletion that something blocks becomes `blocked`: one mail with the reasons and
+  a withdraw link, event `AccountDeletionBlocked`, marked in the Control Panel, retried
+  daily. Blocked and overdue requests can be withdrawn.
+- The `cancel` policy cancels subscriptions right before the erasure, not at the
+  request. `AccountDeleting` fires after a successful erasure, inside the transaction
+  that also deletes the user.
+- Withdrawing (deletion, address change) and every export are closed during an
+  impersonation. This addon's ledger entries carry ids only, no addresses; deletion
+  rows keep no name. Blockers are phrased in the third person in the Control Panel,
+  with the portal URL as a link. A site that turns elevated sessions on without the
+  confirmation route gets a 403 instead of a 500.
 - One confirmation mail: `verification.mail = auto` sends Laravel's `VerifyEmail`
   (`core-verify-email`) for `MustVerifyEmail` models and this addon's mail otherwise;
   Laravel's `Verified` event becomes `EmailVerified`.

@@ -71,11 +71,9 @@ class PersonalDataExport
      */
     public function build(User $user, string $requestedBy = 'customer', mixed $actor = null): array
     {
-        // The customer's own copy, not one an admin takes while signed in as
-        // them. The admin's route is the Control Panel export (`admin`).
-        if ($requestedBy === 'customer') {
-            $this->impersonation->refuseWhileActive();
-        }
+        // Never while an admin is signed in as the customer, whoever asks:
+        // the admin's route is the Control Panel export, as themselves.
+        $this->impersonation->refuseWhileActive();
 
         $export = $this->collect($user);
         $stamp = now()->format('Y-m-d');

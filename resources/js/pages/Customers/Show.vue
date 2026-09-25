@@ -24,6 +24,15 @@ function replace(text, values) {
     return Object.entries(values).reduce((out, [key, value]) => out.replace(`:${key}`, value), text);
 }
 
+// A blocker names where to fix it (the customer portal). Shown as a link,
+// built from text nodes, never as HTML.
+function linkParts(text) {
+    return String(text)
+        .split(/(https?:\/\/[^\s)]+)/)
+        .filter((part) => part !== '')
+        .map((part) => (/^https?:\/\//.test(part) ? { text: part, url: part } : { text: part }));
+}
+
 function post(url, method = 'post') {
     busy.value = true;
     router[method](url, {}, { preserveScroll: true, onFinish: () => (busy.value = false) });
@@ -206,7 +215,8 @@ const statusColor = (status) => ({
                             <dd class="flex flex-wrap gap-1">
                                 <Badge v-if="account.verified" color="green" :text="t.verified" pill />
                                 <Badge v-else color="amber" :text="t.unverified" pill />
-                                <Badge v-if="account.deletion_due" color="red" :text="replace(t.deletion_due, { date: account.deletion_due })" pill />
+                                <Badge v-if="account.deletion_due && account.deletion_state === 'blocked'" color="amber" :text="replace(t.deletion_blocked_since, { date: account.deletion_due })" pill />
+                                <Badge v-else-if="account.deletion_due" color="red" :text="replace(t.deletion_due, { date: account.deletion_due })" pill />
                             </dd>
                             <template v-if="account.verified_at">
                                 <dt class="text-gray-600 dark:text-gray-400">{{ t.verified_at }}</dt>
@@ -234,7 +244,12 @@ const statusColor = (status) => ({
                             :heading="t.blockers"
                         >
                             <ul class="list-disc ps-4 space-y-1">
-                                <li v-for="(blocker, i) in account.blockers" :key="i">{{ blocker }}</li>
+                                <li v-for="(blocker, i) in account.blockers" :key="i">
+                                    <template v-for="(part, j) in linkParts(blocker)" :key="j">
+                                        <a v-if="part.url" :href="part.url" target="_blank" rel="noopener" class="underline break-all">{{ part.text }}</a>
+                                        <template v-else>{{ part.text }}</template>
+                                    </template>
+                                </li>
                             </ul>
                         </Alert>
                     </Card>

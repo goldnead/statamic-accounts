@@ -147,6 +147,7 @@ addresses, never a link or a token.
 | `EmailChanged` | `accounts.email.changed` | `old_email` (`email` is the new one) | `accounts-email-changed` (to the old address) |
 | `AccountDeletionRequested` | `accounts.deletion.requested` | `scheduled_for` | `accounts-deletion-scheduled` |
 | `AccountDeletionCancelled` | `accounts.deletion.cancelled` | | |
+| `AccountDeletionBlocked` | `accounts.deletion.blocked` | `reasons` (how many) | `accounts-deletion-blocked` |
 | `AccountDeleting` | (hook, no trigger) | | |
 | `AccountDeleted` | `accounts.deleted` | | `accounts-account-deleted` |
 | `PersonalDataExported` | `accounts.data.exported` | `sections`, `requested_by` | |
@@ -192,15 +193,31 @@ sends the default text shipped in `lang/{de,en}/mail.php`. Placeholders:
 
 ## Deleting: what goes, what stays
 
-When a deletion is due, `accounts:purge` asks every eraser whether anything stands in
-the way, dispatches `AccountDeleting`, runs all erasers in one database transaction,
-deletes the user and stores the result on the deletion request (row counts only, no
-values). A failing eraser rolls the others back; the account stays scheduled.
+When a deletion is due, `accounts:purge`:
+
+1. asks every eraser whether anything stands in the way. If so, the request becomes
+   **`blocked`**: nothing changes, the person gets one mail (`accounts-deletion-blocked`)
+   with the reasons and a withdraw link (30 days), `AccountDeletionBlocked` fires, and the
+   Control Panel marks the account. The next daily runs try again and delete once the
+   way is clear. A blocked or overdue request can always be withdrawn.
+2. with `deletion.active_subscriptions = cancel`, cancels the running subscriptions
+   through payments, **now and not earlier**: a request that is withdrawn or blocked by
+   something else leaves them running. One that cannot be cancelled blocks.
+3. in one database transaction: runs every eraser, dispatches `AccountDeleting` (the
+   user still exists), deletes the user (Eloquent or file, last) and stores the result on
+   the deletion request (row counts only). Anything failing rolls the database back; the
+   account stays scheduled and `AccountDeleting` counts as not having happened.
+
+**What stays, pseudonymously:** the deletion request rows keep the user id (no
+address, no name) as the record that the deletion happened; this addon's own ledger
+entries (impersonation, a deletion scheduled or withdrawn by an admin) are written under
+the admin's id and name the person only by id, never by address. After the deletion that
+id points at nothing.
 
 | Addon | On deletion |
 |---|---|
-| accounts | Address changes deleted; the deletion request stays as the record, address blacked out |
-| activity | `activity:anonymize --user=<id>` (the ledger's own API): entries under the user id keep type and time, lose user, actor, properties, context. Entries recorded under *another* user id that mention the person are beyond that API and stay; the record says so |
+| accounts | Address changes deleted; deletion requests stay as the record, address and meta cleared |
+| activity | `activity:anonymize --user=<id>` (the ledger's own API): entries under the user id keep type and time, lose user, actor, properties, context. Entries recorded under *another* user id that mention the person are beyond that API and stay; the record says so. This addon writes ids only into its own entries, so nothing there names the person by address |
 | entitlements | Grants held by the user and by the address deleted; team grants stay with the team |
 | leadhub | Contact deleted with events, notes, follow-ups, tasks, revenue lines (database driver) |
 | notifications | Notifications, preferences, digest runs deleted |
@@ -225,7 +242,7 @@ class CourseProgressEraser implements ErasesPersonalData
     public function key(): string { return 'courses'; }
     public function label(): string { return 'Courses'; }
     public function available(): bool { return true; }
-    public function blockers(User $user): array { return []; }   // sentences for the customer
+    public function blockers(User $user, string $audience = 'customer'): array { return []; }   // 'customer': "you …"; 'admin': third person for the CP
     public function erase(User $user): ErasureResult
     {
         $n = Progress::where('user_id', $user->id())->delete();

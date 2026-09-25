@@ -6,7 +6,6 @@ use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\PersonalData\Contributors\EntitlementsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\PaymentsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\TeamsContributor;
-use Goldnead\Accounts\PersonalData\ErasureRegistry;
 use Goldnead\Accounts\Support\Labels;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -68,8 +67,10 @@ class CustomerOverview
             'pending_email' => $change?->email,
             'pending_email_expires' => $this->date($change?->due_at),
             'deletion_due' => $this->date($deletion?->due_at),
-            // What would stand in the way of deleting now. Read without side
-            // effects: with the `cancel` policy nothing is cancelled here.
+            // `pending` or `blocked` (due, but something stands in the way).
+            'deletion_state' => $deletion?->status,
+            // What would stand in the way of deleting now, said to the admin.
+            // Changes nothing: with the `cancel` policy nothing is cancelled here.
             'blockers' => $this->blockers($user),
         ];
     }
@@ -79,13 +80,10 @@ class CustomerOverview
      */
     protected function blockers(User $user): array
     {
-        $blockers = [];
-
-        foreach (app(ErasureRegistry::class)->available() as $eraser) {
-            $blockers = array_merge($blockers, $this->guard(fn () => array_map(fn ($b) => ['text' => $b], $eraser->blockers($user))));
-        }
-
-        return array_column($blockers, 'text');
+        return array_column($this->guard(fn () => array_map(
+            fn (string $text) => ['text' => $text],
+            $this->deletion->blockers($user, 'admin'),
+        )), 'text');
     }
 
     /**

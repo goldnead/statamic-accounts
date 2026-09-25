@@ -105,10 +105,10 @@ class TeamsContributor extends TableContributor implements ErasesPersonalData
      * A team with other members cannot lose its last owner: the members
      * would be left in a team nobody can manage or pay for.
      */
-    public function blockers(User $user): array
+    public function blockers(User $user, string $audience = 'customer'): array
     {
         return array_values(array_map(
-            fn (array $team) => __('accounts::messages.blocker_team_owner', ['team' => $team['name'], 'count' => $team['others']]),
+            fn (array $team) => __('accounts::messages.blocker_team_owner'.($audience === 'admin' ? '_admin' : ''), ['team' => $team['name'], 'count' => $team['others']]),
             array_filter($this->soleOwnerships($user), fn (array $team) => $team['others'] > 0),
         ));
     }

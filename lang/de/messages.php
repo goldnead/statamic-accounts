@@ -40,12 +40,17 @@ return [
     'impersonate_denied' => 'Du darfst dich nicht als diese Person anmelden.',
     'impersonation_locked' => 'Während eines Identitätswechsels lassen sich Adresse, Löschung und Datenexport nicht ändern. Das entscheidet die Person selbst.',
 
+    'elevation_unavailable' => 'Diese Aktion braucht eine Bestätigung, aber die Bestätigungsseite ist nicht eingerichtet. Bitte melde dich beim Betreiber.',
     'section_invoices' => 'Rechnungen',
     'section_activity' => 'Protokoll',
 
     'blocker_subscription' => 'Dein Abo „:product“ läuft noch. Kündige es zuerst, dann kannst du dein Konto löschen.',
     'blocker_subscription_portal' => 'Dein Abo „:product“ läuft noch. Kündige es zuerst im Kundenportal (:url), dann kannst du dein Konto löschen.',
     'blocker_subscription_cancel_failed' => 'Dein Abo „:product“ ließ sich nicht automatisch kündigen. Kündige es bitte selbst oder schreib uns.',
+    'blocker_subscription_admin' => 'Das Konto hat ein laufendes Abo „:product“. Es muss erst gekündigt werden.',
+    'blocker_subscription_portal_admin' => 'Das Konto hat ein laufendes Abo „:product“. Die Person kann es im Kundenportal kündigen: :url',
+    'blocker_subscription_cancel_failed_admin' => 'Das Abo „:product“ ließ sich nicht automatisch kündigen.',
+    'blocker_team_owner_admin' => 'Das Konto ist einzige Inhaberschaft von „:team“ mit :count weiteren Mitgliedern. Die Inhaberschaft muss erst übertragen werden.',
     'blocker_team_owner' => 'Du bist die einzige Inhaberin oder der einzige Inhaber von „:team“ mit :count weiteren Mitgliedern. Übertrage die Inhaberschaft zuerst.',
 
     'retained_payments' => 'Zahlungen und Abos bleiben mit Name und Adresse zehn Jahre gespeichert (§ 147 AO, § 14b UStG).',

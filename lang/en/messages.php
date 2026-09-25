@@ -40,12 +40,17 @@ return [
     'impersonate_denied' => 'You may not sign in as this user.',
     'impersonation_locked' => 'While impersonating, the address, the deletion and the data export cannot be changed. That is the person\'s own decision.',
 
+    'elevation_unavailable' => 'This action needs a confirmation, but the confirmation page is not set up. Please contact the site operator.',
     'section_invoices' => 'Invoices',
     'section_activity' => 'Activity log',
 
     'blocker_subscription' => 'Your subscription ":product" is still running. Cancel it first, then you can delete your account.',
     'blocker_subscription_portal' => 'Your subscription ":product" is still running. Cancel it first in the customer portal (:url), then you can delete your account.',
     'blocker_subscription_cancel_failed' => 'Your subscription ":product" could not be cancelled automatically. Please cancel it yourself or write to us.',
+    'blocker_subscription_admin' => 'The account has a running subscription ":product". It has to be cancelled first.',
+    'blocker_subscription_portal_admin' => 'The account has a running subscription ":product". The person can cancel it in the customer portal: :url',
+    'blocker_subscription_cancel_failed_admin' => 'The subscription ":product" could not be cancelled automatically.',
+    'blocker_team_owner_admin' => 'The account is the only owner of ":team", which has :count other members. The ownership has to be transferred first.',
     'blocker_team_owner' => 'You are the only owner of ":team", which has :count other members. Transfer the ownership first.',
 
     'retained_payments' => 'Payments and subscriptions are kept with name and address for ten years (§ 147 AO, § 14b UStG).',

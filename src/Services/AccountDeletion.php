@@ -4,6 +4,7 @@ namespace Goldnead\Accounts\Services;
 
 use Goldnead\Accounts\Events\AccountDeleted;
 use Goldnead\Accounts\Events\AccountDeleting;
+use Goldnead\Accounts\Events\AccountDeletionBlocked;
 use Goldnead\Accounts\Events\AccountDeletionCancelled;
 use Goldnead\Accounts\Events\AccountDeletionRequested;
 use Goldnead\Accounts\Exceptions\AccountException;
@@ -11,6 +12,8 @@ use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\Models\AccountRequest;
 use Goldnead\Accounts\Support\AccountMailer;
 use Goldnead\Accounts\Support\Users;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Statamic\Auth\User;
@@ -22,11 +25,25 @@ use Throwable;
  *
  * A request writes a pending row with the due date and mails a link to
  * withdraw it. The account keeps working. {@see purgeDue()}, run daily by
- * `accounts:purge`, deletes what is due: {@see AccountDeleting} first, while
- * the user still exists, then the user, then {@see AccountDeleted}.
+ * `accounts:purge`, handles what is due:
+ *
+ * - Something stands in the way (a running subscription, a team the person
+ *   holds alone with other members): the request becomes `blocked`, the
+ *   person gets one mail with the reasons and a withdraw link, and the next
+ *   runs try again. Nothing is changed.
+ * - Otherwise, in one transaction: running subscriptions are cancelled if
+ *   the `cancel` policy says so, every eraser runs, {@see AccountDeleting} is
+ *   dispatched (the user still exists), the user is deleted. A failure
+ *   anywhere rolls the database back and the account stays scheduled.
+ *   {@see AccountDeleted} follows after the commit.
  */
 class AccountDeletion
 {
+    /**
+     * How long the withdraw link in the blocked-mail works.
+     */
+    public const BLOCKED_LINK_DAYS = 30;
+
     public function __construct(
         protected AccountMailer $mailer,
         protected ActivityBridge $activity,
@@ -43,29 +60,33 @@ class AccountDeletion
     }
 
     /**
-     * What stands in the way of deleting this account now, as sentences for
-     * the customer. See {@see PersonalDataErasure::blockers()}.
+     * What stands in the way of deleting this account now, as sentences.
+     * `$audience`: `customer` ("you") or `admin` (third person). Changes
+     * nothing. See {@see PersonalDataErasure::blockers()}.
      *
      * @return list<string>
      */
-    public function blockers(User $user): array
+    public function blockers(User $user, string $audience = 'customer'): array
     {
-        return $this->erasure->blockers($user);
+        return $this->erasure->blockers($user, $audience);
     }
 
+    /**
+     * The open deletion request (pending or blocked), if there is one.
+     */
     public function pending(User $user): ?AccountRequest
     {
         return AccountRequest::query()
             ->forUser((string) $user->id())
             ->ofType(AccountRequest::TYPE_DELETION)
-            ->pending()
+            ->open()
             ->latest('id')
             ->first();
     }
 
     /**
-     * Schedule the deletion. A second request while one is pending returns
-     * the first unchanged: asking twice does not move the date.
+     * Schedule the deletion. A second request while one is open returns the
+     * first unchanged: asking twice does not move the date.
      *
      * @throws AccountException while impersonating, or when something blocks
      *                          the deletion (message lists what)
@@ -82,13 +103,13 @@ class AccountDeletion
             throw new AccountException(implode(' ', $blockers), 'account');
         }
 
+        // No name, no meta: the row outlives the account.
         $request = AccountRequest::create([
             'user_id' => (string) $user->id(),
             'type' => AccountRequest::TYPE_DELETION,
             'email' => (string) $user->email(),
             'status' => AccountRequest::STATUS_PENDING,
             'due_at' => now()->addDays($this->graceDays()),
-            'meta' => ['name' => $user->name()],
         ]);
 
         $due = $request->due_at ?? now();
@@ -102,7 +123,6 @@ class AccountDeletion
 
         AccountDeletionRequested::dispatch((string) $user->id(), (string) $user->email(), $user->name(), $due->toIso8601String());
 
-        // No address in the ledger: the entry outlives the account.
         $this->activity->record('accounts.deletion_requested', [
             'user_id' => (string) $user->id(),
             'scheduled_for' => $due->toIso8601String(),
@@ -113,43 +133,50 @@ class AccountDeletion
 
     /**
      * A link to withdraw the request that works without signing in. Valid
-     * until the deletion is due, and useless after it was withdrawn.
+     * until the deletion is due (or until `$until`), and useless once the
+     * request is no longer open.
      */
-    public function cancelUrl(AccountRequest $request): string
+    public function cancelUrl(AccountRequest $request, ?Carbon $until = null): string
     {
         return URL::temporarySignedRoute(
             'statamic.accounts.deletion.cancel',
-            $request->due_at ?? now()->addDay(),
+            $until ?? $request->due_at ?? now()->addDay(),
             ['request' => $request->id],
         );
     }
 
+    /**
+     * Withdraw the open request. Refused while an admin is signed in as the
+     * customer; the admin's own route in the Control Panel is not an
+     * impersonation and passes.
+     *
+     * @throws AccountException while impersonating
+     */
     public function cancel(User $user, mixed $by = null): bool
     {
+        $this->impersonation->refuseWhileActive();
+
         $request = $this->pending($user);
 
         return $request !== null && $this->cancelRequest($request, $by ?? $user);
     }
 
     /**
-     * Withdraw by request id, for the signed link. False when the request is
-     * no longer pending or already due.
+     * Withdraw by request, for the signed link. Works for a pending request,
+     * also one already due, and for a blocked one. False when it is no longer
+     * open.
      */
     public function cancelRequest(AccountRequest $request, mixed $by = null): bool
     {
-        if (! $request->isPending() || $request->type !== AccountRequest::TYPE_DELETION) {
-            return false;
-        }
-
-        if ($request->due_at !== null && $request->due_at->isPast()) {
+        if (! $request->isOpen() || $request->type !== AccountRequest::TYPE_DELETION) {
             return false;
         }
 
         $request->resolve(AccountRequest::STATUS_CANCELLED);
 
-        $name = $request->meta['name'] ?? null;
+        $user = Users::find($request->user_id);
 
-        AccountDeletionCancelled::dispatch($request->user_id, (string) $request->email, is_string($name) ? $name : null);
+        AccountDeletionCancelled::dispatch($request->user_id, (string) ($user?->email() ?? $request->email), $user?->name());
 
         $this->activity->record('accounts.deletion_cancelled', [
             'user_id' => $request->user_id,
@@ -159,10 +186,10 @@ class AccountDeletion
     }
 
     /**
-     * Delete every account whose grace period is over.
+     * Handle every open request whose grace period is over.
      *
-     * One account failing (a listener throws) does not stop the others; its
-     * request stays pending and the next run tries again.
+     * One account failing does not stop the others; its request stays open
+     * and the next run tries again.
      *
      * @return int the number of accounts deleted
      */
@@ -172,7 +199,7 @@ class AccountDeletion
 
         AccountRequest::query()
             ->ofType(AccountRequest::TYPE_DELETION)
-            ->pending()
+            ->open()
             ->where('due_at', '<=', now())
             ->orderBy('id')
             ->each(function (AccountRequest $request) use (&$deleted) {
@@ -183,7 +210,6 @@ class AccountDeletion
                 } catch (Throwable $e) {
                     Log::error('statamic-accounts: deleting an account failed; it stays scheduled.', [
                         'request' => $request->id,
-                        'user_id' => $request->user_id,
                         'exception' => $e->getMessage(),
                     ]);
                 }
@@ -198,7 +224,7 @@ class AccountDeletion
 
         if ($user === null) {
             // Deleted some other way in the meantime. Nothing left to do.
-            $request->resolve(AccountRequest::STATUS_COMPLETED);
+            $request->forceFill(['status' => AccountRequest::STATUS_COMPLETED, 'resolved_at' => now(), 'email' => null, 'meta' => null])->save();
 
             return false;
         }
@@ -206,10 +232,7 @@ class AccountDeletion
         // Something may have come up during the grace period: a new
         // subscription, members joining a team the person holds alone.
         if ($blockers = $this->blockers($user)) {
-            Log::warning('statamic-accounts: a due deletion is blocked; the account stays scheduled.', [
-                'request' => $request->id,
-                'reasons' => count($blockers),
-            ]);
+            $this->block($request, $user, $blockers);
 
             return false;
         }
@@ -218,20 +241,38 @@ class AccountDeletion
         $email = (string) $user->email();
         $name = $user->name();
 
-        AccountDeleting::dispatch($id, $email, $name);
+        // Only now, with nothing else in the way: the `cancel` policy's
+        // cancellation. A subscription that cannot be cancelled blocks.
+        if ($failed = $this->erasure->cancelSubscriptions($user)) {
+            $this->block($request, $user, $failed);
 
-        $results = $this->erasure->erase($user);
+            return false;
+        }
 
-        $user->delete();
+        $results = DB::transaction(function () use ($user, $request, $id, $email, $name) {
+            $results = $this->erasure->erase($user);
 
-        $request->forceFill([
-            'status' => AccountRequest::STATUS_COMPLETED,
-            'resolved_at' => now(),
-            // The request is all that is left: the id, the date and what was
-            // deleted and kept. Row counts, never a value from a row.
-            'email' => null,
-            'meta' => ['erasure' => array_map(fn ($result) => $result->toArray(), $results)],
-        ])->save();
+            // After a successful erasure, while the user still exists. A
+            // listener that throws rolls everything back.
+            AccountDeleting::dispatch($id, $email, $name);
+
+            // Inside the transaction: an Eloquent user goes with the rest or
+            // not at all; a file user is deleted last, so a failure before
+            // it leaves the file untouched.
+            $user->delete();
+
+            $request->forceFill([
+                'status' => AccountRequest::STATUS_COMPLETED,
+                'resolved_at' => now(),
+                // The request is all that is left: the id (pseudonymous, it
+                // points at nothing now), the dates and what was deleted and
+                // kept. Row counts, never a value from a row.
+                'email' => null,
+                'meta' => ['erasure' => array_map(fn ($result) => $result->toArray(), $results)],
+            ])->save();
+
+            return $results;
+        });
 
         $this->mailer->send('account_deleted', $email, [
             'user' => ['name' => $name, 'email' => $email],
@@ -245,5 +286,43 @@ class AccountDeletion
         ], null, 'accounts:deleted:request:'.$request->id);
 
         return true;
+    }
+
+    /**
+     * Mark a due request blocked and tell the person why, once. A request
+     * already blocked stays quiet; the reasons are asked for anew every run.
+     *
+     * @param  list<string>  $reasons
+     */
+    protected function block(AccountRequest $request, User $user, array $reasons): void
+    {
+        if ($request->isBlocked()) {
+            return;
+        }
+
+        $request->forceFill([
+            'status' => AccountRequest::STATUS_BLOCKED,
+            'meta' => ['blocked_at' => now()->toIso8601String(), 'reasons' => count($reasons)],
+        ])->save();
+
+        $list = '<ul>'.implode('', array_map(fn (string $reason) => '<li>'.e($reason).'</li>', $reasons)).'</ul>';
+
+        $this->mailer->send('deletion_blocked', (string) $user->email(), [
+            'user' => ['name' => $user->name(), 'email' => $user->email()],
+            'reasons_list' => $list,
+            'action_url' => $this->cancelUrl($request, now()->addDays(self::BLOCKED_LINK_DAYS)),
+        ]);
+
+        AccountDeletionBlocked::dispatch((string) $user->id(), (string) $user->email(), $user->name(), count($reasons));
+
+        $this->activity->record('accounts.deletion_blocked', [
+            'user_id' => (string) $user->id(),
+            'reasons' => count($reasons),
+        ], null, 'accounts:deletion_blocked:'.$request->id);
+
+        Log::warning('statamic-accounts: a due deletion is blocked; the account stays and the person was told.', [
+            'request' => $request->id,
+            'reasons' => count($reasons),
+        ]);
     }
 }

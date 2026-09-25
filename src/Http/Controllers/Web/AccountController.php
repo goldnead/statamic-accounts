@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\MessageBag;
 use Statamic\Auth\User as UserContract;
 use Symfony\Component\HttpFoundation\Response;
@@ -64,7 +65,11 @@ class AccountController extends Controller
 
     public function cancelEmailChange(Request $request, EmailChange $emailChange): RedirectResponse
     {
-        $emailChange->cancel($this->user());
+        $user = $this->user();
+
+        abort_if($this->impersonation->active(), 403, __('accounts::messages.impersonation_locked'));
+
+        $emailChange->cancel($user);
 
         return $this->success($request, 'change_email', __('accounts::messages.email_change_cancelled'));
     }
@@ -94,7 +99,11 @@ class AccountController extends Controller
 
     public function withdrawDeletion(Request $request, AccountDeletion $deletion): RedirectResponse
     {
-        $deletion->cancel($this->user());
+        $user = $this->user();
+
+        abort_if($this->impersonation->active(), 403, __('accounts::messages.impersonation_locked'));
+
+        $deletion->cancel($user);
 
         return $this->success($request, 'delete', __('accounts::messages.deletion_cancelled'));
     }
@@ -137,6 +146,11 @@ class AccountController extends Controller
         if (! config('statamic.users.elevated_sessions_enabled') || $request->hasElevatedSession()) {
             return null;
         }
+
+        // Statamic registers its confirmation page only when elevated
+        // sessions were on while the routes loaded. Switched on later, there
+        // is nowhere to send the visitor: refuse, do not crash.
+        abort_unless(Route::has('statamic.elevated-session'), 403, __('accounts::messages.elevation_unavailable'));
 
         $to = $request->input('_redirect');
 

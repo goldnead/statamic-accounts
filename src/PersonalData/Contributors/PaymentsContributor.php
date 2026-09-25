@@ -87,7 +87,7 @@ class PaymentsContributor extends TableContributor implements ErasesPersonalData
         return array_map(fn (array $row) => ['id' => (int) $row['id'], 'product' => (string) $row['product']], $rows);
     }
 
-    public function blockers(User $user): array
+    public function blockers(User $user, string $audience = 'customer'): array
     {
         $running = $this->running($user);
 
@@ -96,10 +96,11 @@ class PaymentsContributor extends TableContributor implements ErasesPersonalData
         }
 
         $portal = $this->portalUrl();
+        $suffix = $audience === 'admin' ? '_admin' : '';
 
         return array_map(fn (array $subscription) => $portal === null
-            ? __('accounts::messages.blocker_subscription', ['product' => $subscription['product']])
-            : __('accounts::messages.blocker_subscription_portal', ['product' => $subscription['product'], 'url' => $portal]),
+            ? __('accounts::messages.blocker_subscription'.$suffix, ['product' => $subscription['product']])
+            : __('accounts::messages.blocker_subscription_portal'.$suffix, ['product' => $subscription['product'], 'url' => $portal]),
             $running);
     }
 

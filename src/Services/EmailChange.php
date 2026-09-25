@@ -143,10 +143,10 @@ class EmailChange
 
         EmailChanged::dispatch((string) $user->id(), $newEmail, $user->name(), $oldEmail);
 
+        // Ids only in the ledger: its entries outlive the account and the
+        // ledger's own anonymisation reaches them only by user id.
         $this->activity->record('accounts.email_changed', [
             'user_id' => (string) $user->id(),
-            'old_email' => $oldEmail,
-            'new_email' => $newEmail,
         ], $user, 'accounts:email_changed:'.$request->id);
 
         return $user;
@@ -154,6 +154,8 @@ class EmailChange
 
     public function cancel(User $user): bool
     {
+        $this->impersonation->refuseWhileActive();
+
         $cancelled = false;
 
         $this->pendingQuery($user)->each(function (AccountRequest $request) use (&$cancelled) {

@@ -32,6 +32,13 @@ class AccountRequest extends Model
 
     public const STATUS_CANCELLED = 'cancelled';
 
+    /**
+     * A deletion that was due but something stood in the way (a running
+     * subscription, a team with other members). Still open: the purge tries
+     * again every day, and it can be withdrawn.
+     */
+    public const STATUS_BLOCKED = 'blocked';
+
     protected $table = 'account_requests';
 
     protected $guarded = ['id'];
@@ -69,9 +76,30 @@ class AccountRequest extends Model
         return $query->where('type', $type);
     }
 
+    /**
+     * Pending or blocked: not finished either way.
+     *
+     * @param  Builder<AccountRequest>  $query
+     * @return Builder<AccountRequest>
+     */
+    public function scopeOpen(Builder $query): Builder
+    {
+        return $query->whereIn('status', [self::STATUS_PENDING, self::STATUS_BLOCKED]);
+    }
+
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isOpen(): bool
+    {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_BLOCKED], true);
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->status === self::STATUS_BLOCKED;
     }
 
     public function resolve(string $status): void

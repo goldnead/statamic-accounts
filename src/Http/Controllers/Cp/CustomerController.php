@@ -14,7 +14,6 @@ use Goldnead\Accounts\Support\Users;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
@@ -55,20 +54,26 @@ class CustomerController extends CpController
         $pendingDeletions = $ready
             ? AccountRequest::query()
                 ->ofType(AccountRequest::TYPE_DELETION)
-                ->pending()
-                ->pluck('due_at', 'user_id')
+                ->open()
+                ->get(['user_id', 'due_at', 'status'])
+                ->keyBy('user_id')
             : collect();
 
         $users = User::query()->orderBy('email')->limit(self::LIMIT)->get();
 
-        $rows = $users->map(fn (UserContract $user) => [
-            'id' => (string) $user->id(),
-            'email' => (string) $user->email(),
-            'name' => $user->name(),
-            'verified' => $verification->isVerified($user),
-            'deletion_due' => ($due = $pendingDeletions->get((string) $user->id())) ? Carbon::parse($due)->isoFormat('L') : null,
-            'url' => cp_route('accounts.customers.show', (string) $user->id()),
-        ])->values()->all();
+        $rows = $users->map(function (UserContract $user) use ($verification, $pendingDeletions) {
+            $open = $pendingDeletions->get((string) $user->id());
+
+            return [
+                'id' => (string) $user->id(),
+                'email' => (string) $user->email(),
+                'name' => $user->name(),
+                'verified' => $verification->isVerified($user),
+                'deletion_due' => $open?->due_at?->isoFormat('L'),
+                'deletion_blocked' => $open?->status === AccountRequest::STATUS_BLOCKED,
+                'url' => cp_route('accounts.customers.show', (string) $user->id()),
+            ];
+        })->values()->all();
 
         return Inertia::render('accounts::Customers/Index', [
             'customers' => $rows,

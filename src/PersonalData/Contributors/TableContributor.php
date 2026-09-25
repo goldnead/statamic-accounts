@@ -61,7 +61,7 @@ abstract class TableContributor implements ContributesPersonalData
      *
      * @return list<string>
      */
-    public function blockers(User $user): array
+    public function blockers(User $user, string $audience = 'customer'): array
     {
         return [];
     }

@@ -30,6 +30,7 @@ class RegistersTemplates
         'confirm_email_change' => ['action_url' => 'https://example.com/!/statamic-accounts/email/confirm/…', 'new_email' => 'maria.neu@example.com', 'old_email' => 'maria.beispiel@example.com', 'expires_in_hours' => 24],
         'email_changed' => ['new_email' => 'maria.neu@example.com', 'old_email' => 'maria.beispiel@example.com'],
         'deletion_scheduled' => ['action_url' => 'https://example.com/!/statamic-accounts/deletion/cancel/…', 'scheduled_for' => '9. Oktober 2026', 'grace_days' => 14],
+        'deletion_blocked' => ['action_url' => 'https://example.com/!/statamic-accounts/deletion/cancel/…', 'reasons_list' => '<ul><li>Dein Abo „Chor-Abo“ läuft noch.</li></ul>'],
         'account_deleted' => [],
     ];
 

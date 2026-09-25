@@ -14,7 +14,7 @@ use Statamic\Auth\User;
  */
 class AccountContributor implements ContributesPersonalData, ErasesPersonalData
 {
-    public function blockers(User $user): array
+    public function blockers(User $user, string $audience = 'customer'): array
     {
         return [];
     }
@@ -29,7 +29,9 @@ class AccountContributor implements ContributesPersonalData, ErasesPersonalData
         $mine = fn () => AccountRequest::query()->forUser((string) $user->id());
 
         $deleted = $mine()->where('type', '!=', AccountRequest::TYPE_DELETION)->delete();
-        $blacked = $mine()->whereNotNull('email')->update(['email' => null]);
+        // Every remaining row of the person, also withdrawn ones: no address,
+        // no meta (older rows may carry a name).
+        $blacked = $mine()->where(fn ($q) => $q->whereNotNull('email')->orWhereNotNull('meta'))->update(['email' => null, 'meta' => null]);
 
         return new ErasureResult($this->key(), deleted: array_filter(['requests' => $deleted]), anonymized: array_filter(['requests' => $blacked]));
     }

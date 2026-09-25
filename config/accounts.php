@@ -107,6 +107,7 @@ return [
             'confirm_email_change' => 'accounts-confirm-email-change',
             'email_changed' => 'accounts-email-changed',
             'deletion_scheduled' => 'accounts-deletion-scheduled',
+            'deletion_blocked' => 'accounts-deletion-blocked',
             'account_deleted' => 'accounts-account-deleted',
         ],
     ],
