@@ -2,7 +2,10 @@
 
 namespace Goldnead\Accounts\PersonalData\Contributors;
 
+use Goldnead\Accounts\Contracts\ErasesPersonalData;
+use Goldnead\Accounts\PersonalData\ErasureResult;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Statamic\Auth\User;
 
@@ -14,7 +17,7 @@ use Statamic\Auth\User;
  * no tables and this contributor reports itself unavailable; that site's CRM
  * data has to be exported from leadhub itself.
  */
-class LeadhubContributor extends TableContributor
+class LeadhubContributor extends TableContributor implements ErasesPersonalData
 {
     public function key(): string
     {
@@ -52,5 +55,40 @@ class LeadhubContributor extends TableContributor
         }
 
         return $data;
+    }
+
+    /**
+     * Tables that hang off a contact by `contact_id`. Deleted with it.
+     *
+     * @var list<string>
+     */
+    protected const CONTACT_TABLES = ['leadhub_events', 'leadhub_notes', 'leadhub_followups', 'leadhub_tasks', 'leadhub_contact_revenue', 'leadhub_contact_segments', 'leadhub_contact_tags'];
+
+    /**
+     * The contact goes, with its timeline, notes, follow-ups, tasks and
+     * revenue lines. Deleted rather than anonymised: an anonymous contact
+     * with a purchase history is still a profile, and the revenue it carries
+     * is a copy of what payments keeps anyway.
+     */
+    public function erase(User $user): ErasureResult
+    {
+        $ids = DB::table('leadhub_contacts')
+            ->where(fn (Builder $w) => $w->where('email_normalized', $this->email($user))->orWhere('user_id', (string) $user->id()))
+            ->pluck('id')
+            ->all();
+
+        $deleted = [];
+
+        if ($ids !== []) {
+            foreach (self::CONTACT_TABLES as $table) {
+                if (Schema::hasTable($table) && Schema::hasColumn($table, 'contact_id')) {
+                    $deleted[str_replace('leadhub_', '', $table)] = DB::table($table)->whereIn('contact_id', $ids)->delete();
+                }
+            }
+        }
+
+        $deleted['contacts'] = DB::table('leadhub_contacts')->whereIn('id', $ids)->delete();
+
+        return new ErasureResult($this->key(), deleted: array_filter($deleted));
     }
 }

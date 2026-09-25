@@ -6,6 +6,7 @@ use Goldnead\Accounts\Events\AccountDeleted;
 use Goldnead\Accounts\Events\AccountDeleting;
 use Goldnead\Accounts\Events\AccountDeletionCancelled;
 use Goldnead\Accounts\Events\AccountDeletionRequested;
+use Goldnead\Accounts\Exceptions\AccountException;
 use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\Models\AccountRequest;
 use Goldnead\Accounts\Support\AccountMailer;
@@ -29,11 +30,27 @@ class AccountDeletion
     public function __construct(
         protected AccountMailer $mailer,
         protected ActivityBridge $activity,
+        protected PersonalDataErasure $erasure,
+        protected Impersonation $impersonation,
     ) {}
 
+    /**
+     * At least one day: a request must leave time to open the withdraw link.
+     */
     public function graceDays(): int
     {
-        return max(0, (int) config('accounts.deletion.grace_days', 14));
+        return max(1, (int) config('accounts.deletion.grace_days', 14));
+    }
+
+    /**
+     * What stands in the way of deleting this account now, as sentences for
+     * the customer. See {@see PersonalDataErasure::blockers()}.
+     *
+     * @return list<string>
+     */
+    public function blockers(User $user): array
+    {
+        return $this->erasure->blockers($user);
     }
 
     public function pending(User $user): ?AccountRequest
@@ -49,11 +66,20 @@ class AccountDeletion
     /**
      * Schedule the deletion. A second request while one is pending returns
      * the first unchanged: asking twice does not move the date.
+     *
+     * @throws AccountException while impersonating, or when something blocks
+     *                          the deletion (message lists what)
      */
     public function request(User $user, mixed $by = null): AccountRequest
     {
+        $this->impersonation->refuseWhileActive();
+
         if ($existing = $this->pending($user)) {
             return $existing;
+        }
+
+        if ($blockers = $this->blockers($user)) {
+            throw new AccountException(implode(' ', $blockers), 'account');
         }
 
         $request = AccountRequest::create([
@@ -76,9 +102,9 @@ class AccountDeletion
 
         AccountDeletionRequested::dispatch((string) $user->id(), (string) $user->email(), $user->name(), $due->toIso8601String());
 
+        // No address in the ledger: the entry outlives the account.
         $this->activity->record('accounts.deletion_requested', [
             'user_id' => (string) $user->id(),
-            'email' => (string) $user->email(),
             'scheduled_for' => $due->toIso8601String(),
         ], $by ?? $user, 'accounts:deletion_requested:'.$request->id);
 
@@ -127,7 +153,6 @@ class AccountDeletion
 
         $this->activity->record('accounts.deletion_cancelled', [
             'user_id' => $request->user_id,
-            'email' => (string) $request->email,
         ], $by, 'accounts:deletion_cancelled:'.$request->id);
 
         return true;
@@ -178,21 +203,34 @@ class AccountDeletion
             return false;
         }
 
+        // Something may have come up during the grace period: a new
+        // subscription, members joining a team the person holds alone.
+        if ($blockers = $this->blockers($user)) {
+            Log::warning('statamic-accounts: a due deletion is blocked; the account stays scheduled.', [
+                'request' => $request->id,
+                'reasons' => count($blockers),
+            ]);
+
+            return false;
+        }
+
         $id = (string) $user->id();
         $email = (string) $user->email();
         $name = $user->name();
 
         AccountDeleting::dispatch($id, $email, $name);
 
+        $results = $this->erasure->erase($user);
+
         $user->delete();
 
         $request->forceFill([
             'status' => AccountRequest::STATUS_COMPLETED,
             'resolved_at' => now(),
-            // The request is all that is left; it keeps neither name nor
-            // address, only the id and the date.
+            // The request is all that is left: the id, the date and what was
+            // deleted and kept. Row counts, never a value from a row.
             'email' => null,
-            'meta' => null,
+            'meta' => ['erasure' => array_map(fn ($result) => $result->toArray(), $results)],
         ])->save();
 
         $this->mailer->send('account_deleted', $email, [
@@ -202,8 +240,9 @@ class AccountDeletion
         AccountDeleted::dispatch($id, $email, $name);
 
         $this->activity->record('accounts.deleted', [
-            'user_id' => $id,
-        ], null, 'accounts:deleted:'.$id);
+            'request_id' => $request->id,
+            'erased' => array_keys($results),
+        ], null, 'accounts:deleted:request:'.$request->id);
 
         return true;
     }

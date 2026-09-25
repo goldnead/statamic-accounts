@@ -46,8 +46,10 @@ return [
         'preview' => 'Bis dahin kannst du es dir anders überlegen.',
         'description' => 'Geht raus, sobald eine Löschung beantragt ist. Platzhalter: user.name, scheduled_for, grace_days, action_url (zurückziehen).',
         'body' => '<p>Hallo {{ user.name }},</p>'
-            .'<p>dein Konto bei {{ site_name }} ist zur Löschung vorgemerkt. Am {{ scheduled_for }} löschen wir es mit allen Daten, die daran hängen.</p>'
-            .'<p>Bis dahin kannst du den Antrag zurückziehen:</p>'
+            .'<p>dein Konto bei {{ site_name }} ist zur Löschung vorgemerkt. Am {{ scheduled_for }} löschen wir es.</p>'
+            .'<p><strong>Was wir löschen:</strong> dein Konto, deine Zugänge, deine Mitgliedschaften in Teams, deinen Kontakt im CRM mit Notizen und Verlauf, deine Benachrichtigungen und Einstellungen. Einträge im Protokoll werden anonymisiert.</p>'
+            .'<p><strong>Was bleibt:</strong> Rechnungen und Zahlungsbelege mit Name und Adresse. Die müssen wir zehn Jahre aufbewahren (§ 147 AO, § 14b UStG). Danach werden sie gelöscht.</p>'
+            .'<p>Bis zum {{ scheduled_for }} kannst du den Antrag zurückziehen:</p>'
             .$button('Konto behalten'),
     ],
     'account_deleted' => [
@@ -56,6 +58,8 @@ return [
         'preview' => 'Die Frist ist abgelaufen.',
         'description' => 'Letzte Mail nach der Löschung. Platzhalter: user.name, user.email.',
         'body' => '<p>Hallo {{ user.name }},</p>'
-            .'<p>dein Konto bei {{ site_name }} ist jetzt gelöscht. Danke, dass du da warst.</p>',
+            .'<p>dein Konto bei {{ site_name }} ist jetzt gelöscht, mit deinen Zugängen, Team-Mitgliedschaften, deinem CRM-Kontakt und deinen Benachrichtigungen.</p>'
+            .'<p>Rechnungen und Zahlungsbelege bewahren wir aus gesetzlichen Gründen zehn Jahre auf (§ 147 AO, § 14b UStG). Diese Mail ist die letzte, die du von deinem Konto bekommst.</p>'
+            .'<p>Danke, dass du da warst.</p>',
     ],
 ];

@@ -90,4 +90,39 @@ return [
     'integration_identity_help' => 'Während eines Identitätswechsels ist die Kundin der Akteur, der Admin steht in impersonated_by.',
     'integration_brand_context' => 'Brand Context',
     'integration_brand_context_help' => 'Frist, Linkdauer und Vorlagen je Marke unter Einstellungen.',
+    'blockers' => 'Steht der Löschung im Weg',
+    'open_in_activity' => 'Im Protokoll öffnen',
+
+    'status' => [
+        'paid' => 'Bezahlt', 'open' => 'Offen', 'pending' => 'Ausstehend', 'initiated' => 'Begonnen',
+        'failed' => 'Fehlgeschlagen', 'expired' => 'Abgelaufen', 'canceled' => 'Abgebrochen', 'cancelled' => 'Gekündigt',
+        'refunded' => 'Erstattet', 'partially_refunded' => 'Teilweise erstattet', 'chargeback' => 'Rückbuchung',
+        'active' => 'Aktiv', 'paused' => 'Pausiert', 'suspended' => 'Ausgesetzt', 'completed' => 'Beendet',
+        'revoked' => 'Entzogen', 'grace' => 'Kulanzzeit', 'fulfilled' => 'Ausgeliefert', 'authorized' => 'Autorisiert',
+    ],
+    'source' => [
+        'payment' => 'Kauf', 'manual' => 'Manuell', 'course' => 'Kurs', 'team' => 'Team', 'offer' => 'Angebot',
+        'subscription' => 'Abo', 'lead-magnet' => 'Lead Magnet', 'import' => 'Import', 'gift' => 'Geschenk', 'trial' => 'Testzugang',
+    ],
+    'role' => [
+        'owner' => 'Inhaber:in', 'admin' => 'Admin', 'member' => 'Mitglied', 'viewer' => 'Lesend', 'billing' => 'Abrechnung',
+    ],
+    'interval' => [
+        'every_day' => 'täglich', 'every_week' => 'wöchentlich', 'every_month' => 'monatlich', 'every_year' => 'jährlich',
+        'every_n_day' => 'alle :count Tage', 'every_n_week' => 'alle :count Wochen', 'every_n_month' => 'alle :count Monate', 'every_n_year' => 'alle :count Jahre',
+    ],
+    'activity' => [
+        'accounts_email_verified' => 'E-Mail bestätigt',
+        'accounts_email_changed' => 'Adresse geändert',
+        'accounts_deletion_requested' => 'Löschung vorgemerkt',
+        'accounts_deletion_cancelled' => 'Löschung zurückgezogen',
+        'accounts_deleted' => 'Konto gelöscht',
+        'accounts_data_exported' => 'Daten exportiert',
+        'accounts_impersonation_started' => 'Identitätswechsel begonnen',
+        'accounts_impersonation_ended' => 'Identitätswechsel beendet',
+        'commerce_purchase_completed' => 'Kauf abgeschlossen',
+        'marketing_subscription_confirmed' => 'Newsletter bestätigt',
+        'marketing_unsubscribed' => 'Newsletter abgemeldet',
+        'crm_contact_created' => 'Kontakt angelegt',
+    ],
 ];

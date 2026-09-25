@@ -57,6 +57,50 @@ abstract class TableContributor implements ContributesPersonalData
     }
 
     /**
+     * Nothing stands in the way unless a subclass says so.
+     *
+     * @return list<string>
+     */
+    public function blockers(User $user): array
+    {
+        return [];
+    }
+
+    /**
+     * Delete the matching rows of a table, if the table exists.
+     *
+     * @param  callable(Builder): mixed  $where
+     */
+    protected function deleteWhere(string $table, callable $where): int
+    {
+        if (! Schema::hasTable($table)) {
+            return 0;
+        }
+
+        $query = DB::table($table);
+        $where($query);
+
+        return $query->delete();
+    }
+
+    /**
+     * Count the matching rows of a table, if the table exists.
+     *
+     * @param  callable(Builder): mixed  $where
+     */
+    protected function countWhere(string $table, callable $where): int
+    {
+        if (! Schema::hasTable($table)) {
+            return 0;
+        }
+
+        $query = DB::table($table);
+        $where($query);
+
+        return $query->count();
+    }
+
+    /**
      * @param  callable(Builder): mixed  $where
      * @return list<array<string, mixed>>
      */

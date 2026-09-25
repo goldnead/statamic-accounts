@@ -6,6 +6,8 @@ use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\PersonalData\Contributors\EntitlementsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\PaymentsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\TeamsContributor;
+use Goldnead\Accounts\PersonalData\ErasureRegistry;
+use Goldnead\Accounts\Support\Labels;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -66,7 +68,24 @@ class CustomerOverview
             'pending_email' => $change?->email,
             'pending_email_expires' => $this->date($change?->due_at),
             'deletion_due' => $this->date($deletion?->due_at),
+            // What would stand in the way of deleting now. Read without side
+            // effects: with the `cancel` policy nothing is cancelled here.
+            'blockers' => $this->blockers($user),
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function blockers(User $user): array
+    {
+        $blockers = [];
+
+        foreach (app(ErasureRegistry::class)->available() as $eraser) {
+            $blockers = array_merge($blockers, $this->guard(fn () => array_map(fn ($b) => ['text' => $b], $eraser->blockers($user))));
+        }
+
+        return array_column($blockers, 'text');
     }
 
     /**
@@ -90,6 +109,7 @@ class CustomerOverview
                 'product' => $row->product,
                 'amount' => $this->money((int) $row->amount_cent, (string) $row->currency),
                 'status' => $row->status,
+                'status_label' => Labels::status($row->status),
                 'provider' => $row->provider,
                 'date' => $this->date($row->paid_at ?? $row->created_at),
             ])
@@ -117,7 +137,9 @@ class CustomerOverview
                 'product' => $row->product,
                 'amount' => $this->money((int) $row->amount_cent, (string) $row->currency),
                 'interval' => $row->interval,
+                'interval_label' => Labels::interval($row->interval),
                 'status' => $row->status,
+                'status_label' => Labels::status($row->status),
                 'next_payment' => $this->date($row->next_payment_at),
                 'started' => $this->date($row->starts_at ?? $row->created_at),
             ])
@@ -143,7 +165,9 @@ class CustomerOverview
                 'id' => $row->id,
                 'product' => $row->product_slug,
                 'source' => $row->source,
+                'source_label' => Labels::source($row->source),
                 'status' => $row->status,
+                'status_label' => Labels::status($row->status),
                 'held_by' => $row->subject_type === 'email' ? 'email' : 'user',
                 'starts' => $this->date($row->starts_at),
                 'expires' => $this->date($row->expires_at),
@@ -162,8 +186,15 @@ class CustomerOverview
             return ['installed' => false, 'rows' => []];
         }
 
+        // A team names its roles itself (`team_roles.label`); the shipped
+        // translation covers the rest.
+        $teamRoles = fn (mixed $teamId, mixed $role) => Schema::hasTable('team_roles')
+            ? DB::table('team_roles')->where('team_id', $teamId)->where('handle', $role)->value('label')
+            : null;
+
         $rows = $this->guard(fn () => array_map(fn (array $row) => array_merge($row, [
             'joined_at' => $this->date($row['joined_at']),
+            'role_label' => Labels::role((string) $row['role'], $teamRoles($row['team_id'], $row['role'])),
         ]), TeamsContributor::memberships($user)));
 
         return ['installed' => true, 'rows' => $rows];
@@ -199,6 +230,7 @@ class CustomerOverview
                 ->map(fn ($row) => [
                     'id' => $row->id,
                     'type' => $row->event_type ?? null,
+                    'label' => Labels::activity($row->event_type ?? null),
                     'date' => $this->date($row->occurred_at ?? $row->created_at ?? null),
                 ])
                 ->all();

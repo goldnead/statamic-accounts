@@ -3,6 +3,7 @@
 namespace Goldnead\Accounts;
 
 use Goldnead\Accounts\Contracts\ContributesPersonalData;
+use Goldnead\Accounts\Contracts\ErasesPersonalData;
 use Goldnead\Accounts\Http\Middleware\AttributeImpersonation;
 use Goldnead\Accounts\Http\Middleware\EnsureEmailIsVerified;
 use Goldnead\Accounts\Integrations\ActivityBridge;
@@ -10,11 +11,14 @@ use Goldnead\Accounts\Integrations\Automations\AutomationsBridge;
 use Goldnead\Accounts\Integrations\EmailTemplates\DefaultTemplateSource;
 use Goldnead\Accounts\Integrations\WebhookManager\WebhookManagerBridge;
 use Goldnead\Accounts\PersonalData\Contributors\AccountContributor;
+use Goldnead\Accounts\PersonalData\Contributors\ActivityContributor;
 use Goldnead\Accounts\PersonalData\Contributors\EntitlementsContributor;
+use Goldnead\Accounts\PersonalData\Contributors\InvoicesContributor;
 use Goldnead\Accounts\PersonalData\Contributors\LeadhubContributor;
 use Goldnead\Accounts\PersonalData\Contributors\NotificationsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\PaymentsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\TeamsContributor;
+use Goldnead\Accounts\PersonalData\ErasureRegistry;
 use Goldnead\Accounts\PersonalData\PersonalDataRegistry;
 use Goldnead\Accounts\Support\Settings;
 use Illuminate\Console\Scheduling\Schedule;
@@ -63,6 +67,26 @@ class ServiceProvider extends AddonServiceProvider
     public const CONTRIBUTORS = [
         AccountContributor::class,
         PaymentsContributor::class,
+        InvoicesContributor::class,
+        EntitlementsContributor::class,
+        LeadhubContributor::class,
+        NotificationsContributor::class,
+        TeamsContributor::class,
+        ActivityContributor::class,
+    ];
+
+    /**
+     * The erasers shipped with the addon, in the order they run. Activity
+     * before leadhub, so the ledger is anonymised while the contact still
+     * exists.
+     *
+     * @var list<class-string<ErasesPersonalData>>
+     */
+    public const ERASERS = [
+        AccountContributor::class,
+        ActivityContributor::class,
+        PaymentsContributor::class,
+        InvoicesContributor::class,
         EntitlementsContributor::class,
         LeadhubContributor::class,
         NotificationsContributor::class,
@@ -96,6 +120,13 @@ class ServiceProvider extends AddonServiceProvider
         $this->app->afterResolving(PersonalDataRegistry::class, function (PersonalDataRegistry $registry) {
             foreach (self::CONTRIBUTORS as $contributor) {
                 $registry->register($contributor);
+            }
+        });
+
+        $this->app->singleton(ErasureRegistry::class);
+        $this->app->afterResolving(ErasureRegistry::class, function (ErasureRegistry $registry) {
+            foreach (self::ERASERS as $eraser) {
+                $registry->register($eraser);
             }
         });
 

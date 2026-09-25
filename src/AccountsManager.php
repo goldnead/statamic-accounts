@@ -3,12 +3,15 @@
 namespace Goldnead\Accounts;
 
 use Goldnead\Accounts\Contracts\ContributesPersonalData;
+use Goldnead\Accounts\Contracts\ErasesPersonalData;
+use Goldnead\Accounts\PersonalData\ErasureRegistry;
 use Goldnead\Accounts\PersonalData\PersonalDataRegistry;
 use Goldnead\Accounts\Services\AccountDeletion;
 use Goldnead\Accounts\Services\CustomerOverview;
 use Goldnead\Accounts\Services\EmailChange;
 use Goldnead\Accounts\Services\EmailVerification;
 use Goldnead\Accounts\Services\Impersonation;
+use Goldnead\Accounts\Services\PersonalDataErasure;
 use Goldnead\Accounts\Services\PersonalDataExport;
 
 /**
@@ -61,6 +64,26 @@ class AccountsManager
     public function contributeData(ContributesPersonalData|string $contributor): static
     {
         $this->personalData()->register($contributor);
+
+        return $this;
+    }
+
+    public function erasure(): PersonalDataErasure
+    {
+        return app(PersonalDataErasure::class);
+    }
+
+    public function erasers(): ErasureRegistry
+    {
+        return app(ErasureRegistry::class);
+    }
+
+    /**
+     * @param  ErasesPersonalData|class-string<ErasesPersonalData>  $eraser
+     */
+    public function eraseData(ErasesPersonalData|string $eraser): static
+    {
+        $this->erasers()->register($eraser);
 
         return $this;
     }

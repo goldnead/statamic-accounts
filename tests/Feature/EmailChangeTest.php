@@ -6,7 +6,6 @@ use Goldnead\Accounts\Events\EmailChanged;
 use Goldnead\Accounts\Events\EmailChangeRequested;
 use Goldnead\Accounts\Facades\Accounts;
 use Goldnead\Accounts\Mail\AccountMail;
-use Goldnead\Accounts\Models\AccountRequest;
 use Goldnead\Accounts\Tests\TestCase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
@@ -59,20 +58,6 @@ class EmailChangeTest extends TestCase
         Event::assertDispatched(EmailChanged::class, fn ($e) => $e->payload() === [
             'user_id' => (string) $user->id(), 'email' => 'neu@example.com', 'name' => 'Sina Sänger', 'old_email' => 'sina@example.com',
         ]);
-    }
-
-    #[Test]
-    public function a_wrong_password_changes_nothing(): void
-    {
-        Mail::fake();
-        $user = $this->makeUser();
-
-        $this->actingAs($user)
-            ->post(route('statamic.accounts.email.change'), ['email' => 'neu@example.com', 'password' => 'falsch'])
-            ->assertSessionHasErrors(['password'], null, 'accounts.change_email');
-
-        Mail::assertNothingSent();
-        $this->assertSame(0, AccountRequest::query()->count());
     }
 
     #[Test]

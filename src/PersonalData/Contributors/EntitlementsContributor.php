@@ -2,6 +2,8 @@
 
 namespace Goldnead\Accounts\PersonalData\Contributors;
 
+use Goldnead\Accounts\Contracts\ErasesPersonalData;
+use Goldnead\Accounts\PersonalData\ErasureResult;
 use Goldnead\Accounts\Support\Subjects;
 use Illuminate\Database\Query\Builder;
 use Statamic\Auth\User;
@@ -11,7 +13,7 @@ use Statamic\Auth\User;
  * was stored under the user (a course, a manual grant) or under the address
  * (a purchase through payments).
  */
-class EntitlementsContributor extends TableContributor
+class EntitlementsContributor extends TableContributor implements ErasesPersonalData
 {
     public function key(): string
     {
@@ -36,6 +38,17 @@ class EntitlementsContributor extends TableContributor
     public function collect(User $user): array
     {
         return ['entitlements' => $this->rows('entitlements', fn (Builder $q) => static::whereSubject($q, $user))];
+    }
+
+    /**
+     * Every grant held by the person, under the address and under the user.
+     * Grants held by a team stay with the team.
+     */
+    public function erase(User $user): ErasureResult
+    {
+        return new ErasureResult($this->key(), deleted: [
+            'entitlements' => $this->deleteWhere('entitlements', fn (Builder $q) => static::whereSubject($q, $user)),
+        ]);
     }
 
     public static function whereSubject(Builder $query, User $user): Builder

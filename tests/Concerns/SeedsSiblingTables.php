@@ -114,6 +114,108 @@ trait SeedsSiblingTables
             $t->timestamp('joined_at')->nullable();
             $t->timestamps();
         });
+
+        Schema::create('team_invitations', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('team_id');
+            $t->string('email');
+            $t->string('role');
+            $t->string('invited_by')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('team_roles', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('team_id');
+            $t->string('handle');
+            $t->string('label');
+        });
+
+        Schema::create('leadhub_notes', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('contact_id');
+            $t->text('body');
+            $t->timestamps();
+        });
+
+        Schema::create('notification_digest_runs', function (Blueprint $t) {
+            $t->id();
+            $t->string('user_id')->nullable();
+            $t->string('email')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('invoices', function (Blueprint $t) {
+            $t->id();
+            $t->string('number');
+            $t->string('buyer_name')->nullable();
+            $t->string('buyer_email')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('activities', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('brand_id')->default(1);
+            $t->string('event_type');
+            $t->string('actor_id')->nullable();
+            $t->string('user_id')->nullable();
+            $t->uuid('contact_uuid')->nullable();
+            $t->json('properties')->nullable();
+            $t->json('context')->nullable();
+            $t->boolean('anonymized')->default(false);
+            $t->timestamp('occurred_at')->nullable();
+        });
+    }
+
+    /**
+     * A stranger with rows in every table, who must come out of an erasure
+     * untouched.
+     */
+    protected function seedStranger(): void
+    {
+        $now = now();
+
+        DB::table('subscriptions')->insert(['provider' => 'mollie', 'product' => 'x', 'amount_cent' => 100, 'currency' => 'EUR', 'interval' => '1 month', 'status' => 'active', 'email' => 'fremd@example.com', 'created_at' => $now]);
+        DB::table('entitlements')->insert(['subject_type' => 'email', 'subject_id' => 'fremd@example.com', 'product_slug' => 'x', 'source' => 'payment', 'status' => 'active', 'created_at' => $now]);
+        DB::table('leadhub_contacts')->insert(['email' => 'fremd@example.com', 'email_normalized' => 'fremd@example.com', 'created_at' => $now]);
+        DB::table('notification_items')->insert(['user_id' => 'fremd-id', 'message' => 'x', 'created_at' => $now]);
+        DB::table('activities')->insert(['event_type' => 'x', 'user_id' => 'fremd-id', 'properties' => '{"email":"fremd@example.com"}', 'occurred_at' => $now]);
+    }
+
+    /**
+     * Every row in every table of the test database that still names the
+     * person, by id or by address. The retained tables are named by the
+     * caller.
+     *
+     * @param  list<string>  $retained
+     * @return array<string, int>
+     */
+    protected function rowsNaming(string $id, string $email, array $retained = []): array
+    {
+        $found = [];
+
+        foreach (Schema::getTableListing() as $table) {
+            $table = str_contains($table, '.') ? substr($table, strrpos($table, '.') + 1) : $table;
+
+            if (in_array($table, array_merge($retained, ['migrations']), true)) {
+                continue;
+            }
+
+            $columns = Schema::getColumnListing($table);
+            $query = DB::table($table)->where(function ($q) use ($columns, $id, $email) {
+                foreach ($columns as $column) {
+                    $q->orWhereRaw('lower(cast('.$column.' as text)) like ?', ['%'.mb_strtolower($email).'%']);
+                    $q->orWhere($column, $id);
+                    $q->orWhereRaw('cast('.$column.' as text) like ?', ['%"'.$id.'"%']);
+                }
+            });
+
+            if (($count = $query->count()) > 0) {
+                $found[$table] = $count;
+            }
+        }
+
+        return $found;
     }
 
     protected function seedSiblingRows(User $user): void
@@ -135,6 +237,13 @@ trait SeedsSiblingTables
 
         $contactId = DB::table('leadhub_contacts')->insertGetId(['email' => 'Sina@example.com', 'email_normalized' => 'sina@example.com', 'full_name' => 'Sina Sänger', 'created_at' => $now]);
         DB::table('leadhub_events')->insert(['contact_id' => $contactId, 'type' => 'purchase', 'payload' => '{"amount":149}', 'created_at' => $now]);
+        DB::table('leadhub_notes')->insert(['contact_id' => $contactId, 'body' => 'Singt Alt', 'created_at' => $now]);
+        DB::table('notification_digest_runs')->insert(['user_id' => (string) $user->id(), 'email' => 'sina@example.com', 'created_at' => $now]);
+        DB::table('invoices')->insert(['number' => 'R-2026-001', 'buyer_name' => 'Sina Sänger', 'buyer_email' => 'sina@example.com', 'created_at' => $now]);
+        DB::table('activities')->insert([
+            ['event_type' => 'commerce.purchase_completed', 'user_id' => (string) $user->id(), 'properties' => '{"email":"sina@example.com"}', 'occurred_at' => $now],
+            ['event_type' => 'accounts.email_verified', 'user_id' => (string) $user->id(), 'properties' => '{"user_id":"'.$user->id().'"}', 'occurred_at' => $now],
+        ]);
 
         DB::table('notification_items')->insert(['user_id' => (string) $user->id(), 'message' => 'Neue Probe', 'created_at' => $now]);
         DB::table('notification_preferences')->insert(['user_id' => (string) $user->id(), 'type' => 'probe', 'channel' => 'mail', 'enabled' => true]);

@@ -2,6 +2,8 @@
 
 namespace Goldnead\Accounts\Integrations;
 
+use Goldnead\Accounts\Services\Impersonation;
+use Goldnead\Accounts\Support\Users;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -62,12 +64,28 @@ class ActivityBridge
      */
     protected function identity(mixed $actor): mixed
     {
-        if ($actor === null || ! class_exists(self::IDENTITY)) {
+        if (! class_exists(self::IDENTITY)) {
             return null;
         }
 
         $facade = self::IDENTITY;
 
-        return $facade::resolve($actor);
+        // While an admin is signed in as the customer, the admin acted, and
+        // the entry says so: the admin as actor, the customer in
+        // `meta.acting_as`. The pinned identity (set by
+        // AttributeImpersonation) is where both are known.
+        $impersonation = app(Impersonation::class);
+
+        if ($impersonation->active()) {
+            $current = $facade::current();
+            $adminId = $current->meta['impersonated_by'] ?? $impersonation->impersonatorId();
+            $admin = Users::find($adminId);
+
+            if ($admin !== null) {
+                return $facade::resolve($admin)->withMeta(['acting_as' => $current->userId ?? Users::current()?->id()]);
+            }
+        }
+
+        return $actor === null ? null : $facade::resolve($actor);
     }
 }

@@ -53,18 +53,6 @@ class AccountDeletionTest extends TestCase
     }
 
     #[Test]
-    public function a_wrong_password_schedules_nothing(): void
-    {
-        $user = $this->makeUser();
-
-        $this->actingAs($user)
-            ->post(route('statamic.accounts.deletion.request'), ['password' => 'falsch'])
-            ->assertSessionHasErrors(['password'], null, 'accounts.delete');
-
-        $this->assertNull(Accounts::deletion()->pending($user));
-    }
-
-    #[Test]
     public function the_request_can_be_withdrawn_within_the_grace_period_and_nothing_is_deleted(): void
     {
         Mail::fake();

@@ -2,6 +2,8 @@
 
 namespace Goldnead\Accounts\PersonalData\Contributors;
 
+use Goldnead\Accounts\Contracts\ErasesPersonalData;
+use Goldnead\Accounts\PersonalData\ErasureResult;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Schema;
 use Statamic\Auth\User;
@@ -10,7 +12,7 @@ use Statamic\Auth\User;
  * goldnead/statamic-notifications: the notifications addressed to the user,
  * their channel preferences and the digests sent to them.
  */
-class NotificationsContributor extends TableContributor
+class NotificationsContributor extends TableContributor implements ErasesPersonalData
 {
     public function key(): string
     {
@@ -47,9 +49,26 @@ class NotificationsContributor extends TableContributor
         return $data;
     }
 
-    protected function whereEmailIfPresent(Builder $query, User $user): Builder
+    /**
+     * Notifications, preferences and digest runs addressed to the person, by
+     * user id or address. Nothing here needs keeping.
+     */
+    public function erase(User $user): ErasureResult
     {
-        if (! Schema::hasColumn('notification_items', 'email')) {
+        $deleted = [];
+
+        foreach (['notification_items' => 'notifications', 'notification_preferences' => 'preferences', 'notification_digest_runs' => 'digests'] as $table => $key) {
+            $deleted[$key] = $this->deleteWhere($table, fn (Builder $q) => $q->where(
+                fn (Builder $w) => $this->whereEmailIfPresent($w->where('user_id', (string) $user->id()), $user, $table)
+            ));
+        }
+
+        return new ErasureResult($this->key(), deleted: array_filter($deleted));
+    }
+
+    protected function whereEmailIfPresent(Builder $query, User $user, string $table = 'notification_items'): Builder
+    {
+        if (! Schema::hasColumn($table, 'email')) {
             return $query;
         }
 

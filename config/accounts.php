@@ -55,9 +55,20 @@ return [
     */
 
     'deletion' => [
+        // At least 1: the withdraw link needs time to be opened.
         'grace_days' => 14,
         'logout' => false,
         'redirect' => '/',
+
+        // A subscription that still charges: `block` refuses the deletion
+        // and points to the payments customer portal; `cancel` cancels it
+        // through payments when the deletion is requested (and again when
+        // it is due, should a new one have started).
+        'active_subscriptions' => 'block',
+
+        // Where the blocker message sends people to cancel. Empty: the
+        // payments portal (`statamic-payments.portal.request`) when present.
+        'portal_url' => '',
     ],
 
     /*

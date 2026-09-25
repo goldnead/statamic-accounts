@@ -24,6 +24,7 @@ class PersonalDataExport
     public function __construct(
         protected PersonalDataRegistry $registry,
         protected ActivityBridge $activity,
+        protected Impersonation $impersonation,
     ) {}
 
     /**
@@ -70,6 +71,12 @@ class PersonalDataExport
      */
     public function build(User $user, string $requestedBy = 'customer', mixed $actor = null): array
     {
+        // The customer's own copy, not one an admin takes while signed in as
+        // them. The admin's route is the Control Panel export (`admin`).
+        if ($requestedBy === 'customer') {
+            $this->impersonation->refuseWhileActive();
+        }
+
         $export = $this->collect($user);
         $stamp = now()->format('Y-m-d');
         $base = 'personal-data-'.Str::slug(str_replace(['@', '.'], '-', (string) $user->email())).'-'.$stamp;

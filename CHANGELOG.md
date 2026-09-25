@@ -24,3 +24,18 @@ First version.
   installed. Every mail is an email-templates slug with a shipped default.
 - Settings through brand-context's settings layer.
 - Works with file and Eloquent users.
+- Deleting erases, not only the user: contract `ErasesPersonalData` with erasers for
+  entitlements, teams, leadhub, notifications, activity (through `activity:anonymize`)
+  and this addon's own requests; payments and invoices are kept (§ 147 AO, § 14b UStG)
+  and reported. The deletion record keeps what was deleted, anonymised and kept.
+- A running subscription blocks the deletion with a link to the customer portal, or,
+  with `deletion.active_subscriptions = cancel`, is cancelled through payments. Being
+  the only owner of a team with other members blocks it too.
+- Changing the address, deleting and exporting ask for Statamic's elevated session
+  instead of a password field, and are closed during an impersonation.
+- Scheduling a deletion in the Control Panel needs core's `delete users`; a super admin
+  only by a super admin.
+- Entries written during an impersonation name the admin as actor.
+- Statuses, intervals, sources, roles and activity types in the customer overview are
+  translated.
+- `deletion.grace_days` is at least 1.

@@ -3,15 +3,37 @@
 namespace Goldnead\Accounts\PersonalData\Contributors;
 
 use Goldnead\Accounts\Contracts\ContributesPersonalData;
+use Goldnead\Accounts\Contracts\ErasesPersonalData;
 use Goldnead\Accounts\Models\AccountRequest;
+use Goldnead\Accounts\PersonalData\ErasureResult;
 use Statamic\Auth\User;
 
 /**
  * The account itself: the user record without its secrets, plus the open
  * requests this addon holds for it.
  */
-class AccountContributor implements ContributesPersonalData
+class AccountContributor implements ContributesPersonalData, ErasesPersonalData
 {
+    public function blockers(User $user): array
+    {
+        return [];
+    }
+
+    /**
+     * This addon's own rows: address changes go, deletion requests stay as
+     * the record of the deletion, with the address blacked out. The user
+     * record itself is deleted by the caller after every eraser has run.
+     */
+    public function erase(User $user): ErasureResult
+    {
+        $mine = fn () => AccountRequest::query()->forUser((string) $user->id());
+
+        $deleted = $mine()->where('type', '!=', AccountRequest::TYPE_DELETION)->delete();
+        $blacked = $mine()->whereNotNull('email')->update(['email' => null]);
+
+        return new ErasureResult($this->key(), deleted: array_filter(['requests' => $deleted]), anonymized: array_filter(['requests' => $blacked]));
+    }
+
     /**
      * Keys that are secrets or security material, not information about the
      * person.

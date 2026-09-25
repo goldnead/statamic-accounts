@@ -27,8 +27,6 @@ return [
     'email_unchanged' => 'Das ist schon deine Adresse.',
     'email_taken' => 'Ein anderes Konto nutzt diese Adresse bereits.',
     'link_invalid' => 'Dieser Link gilt nicht mehr. Fordere einen neuen an.',
-    'password_wrong' => 'Das Passwort stimmt nicht.',
-    'confirm_wrong' => 'Gib zur Bestätigung deine aktuelle E-Mail-Adresse ein.',
 
     'verification_sent' => 'Wir haben dir einen Link geschickt, mit dem du deine Adresse bestätigst.',
     'verification_required' => 'Bitte bestätige zuerst deine E-Mail-Adresse.',
@@ -40,6 +38,19 @@ return [
     'deletion_scheduled' => 'Dein Konto ist zur Löschung vorgemerkt.',
     'deletion_cancelled' => 'Die Löschung ist zurückgezogen. Dein Konto bleibt.',
     'impersonate_denied' => 'Du darfst dich nicht als diese Person anmelden.',
+    'impersonation_locked' => 'Während eines Identitätswechsels lassen sich Adresse, Löschung und Datenexport nicht ändern. Das entscheidet die Person selbst.',
+
+    'section_invoices' => 'Rechnungen',
+    'section_activity' => 'Protokoll',
+
+    'blocker_subscription' => 'Dein Abo „:product“ läuft noch. Kündige es zuerst, dann kannst du dein Konto löschen.',
+    'blocker_subscription_portal' => 'Dein Abo „:product“ läuft noch. Kündige es zuerst im Kundenportal (:url), dann kannst du dein Konto löschen.',
+    'blocker_subscription_cancel_failed' => 'Dein Abo „:product“ ließ sich nicht automatisch kündigen. Kündige es bitte selbst oder schreib uns.',
+    'blocker_team_owner' => 'Du bist die einzige Inhaberin oder der einzige Inhaber von „:team“ mit :count weiteren Mitgliedern. Übertrage die Inhaberschaft zuerst.',
+
+    'retained_payments' => 'Zahlungen und Abos bleiben mit Name und Adresse zehn Jahre gespeichert (§ 147 AO, § 14b UStG).',
+    'retained_invoices' => 'Rechnungen bleiben mit Name und Adresse zehn Jahre gespeichert (§ 147 AO, § 14b UStG).',
+    'activity_note' => 'Einträge im Protokoll unter dieser Nutzer-ID sind anonymisiert. Einträge anderer Personen (etwa eines Admins), die diese Person erwähnen, erreicht die Anonymisierung von Activity nicht.',
 
     'purged' => '{0} Kein Konto war zur Löschung fällig.|{1} :count Konto gelöscht.|[2,*] :count Konten gelöscht.',
 ];

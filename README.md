@@ -15,7 +15,9 @@ own. This addon does not replace any of them. It adds what core does not have:
 - **Changing the address** with confirmation: the new address is active only after
   its link is opened; the old one is told.
 - **Deleting the account** with a grace period (14 days by default). The customer can
-  withdraw until then; a daily run deletes what is due.
+  withdraw until then; a daily run deletes the account **and what every addon holds
+  about the person** (`ErasesPersonalData`), keeps what the law says must be kept
+  (payments, invoices), and records which was which.
 - **Personal data export** (GDPR Art. 15/20): a ZIP with one JSON file per addon.
   Every addon contributes its share through `ContributesPersonalData`.
 - **Customer overview** in the Control Panel: payments, subscriptions, access grants,
@@ -67,17 +69,18 @@ sets where to go after submitting (a path on the site).
 {{ accounts:change_email_form redirect="/account" }}
     {{ if pending_email }}<p>Waiting for {{ pending_email }} until {{ pending_expires }}.</p>{{ /if }}
     <input type="email" name="email">
-    {{ if has_password }}<input type="password" name="password">{{ else }}<input name="confirm" placeholder="Your current address">{{ /if }}
-    {{ error:email }} {{ error:password }}
-    <button>Change address</button>
+    {{ error:email }}
+    <button {{ if locked }}disabled{{ /if }}>Change address</button>
 {{ /accounts:change_email_form }}
 
 {{ accounts:delete_form }}
     {{ if pending }}
         <p>Your account will be deleted on {{ scheduled_for }}.</p>
         <button>Keep my account</button>
+    {{ elseif blockers }}
+        <ul>{{ blockers }}<li>{{ value }}</li>{{ /blockers }}</ul>
     {{ else }}
-        <input type="password" name="password">
+        {{ error:account }}
         <button>Delete my account in {{ grace_days }} days</button>
     {{ /if }}
 {{ /accounts:delete_form }}
@@ -97,15 +100,24 @@ sets where to go after submitting (a path on the site).
 | Tag | Variables |
 |---|---|
 | `accounts:verify_notice` | `email`, `success`, `errors`, `error` |
-| `accounts:change_email_form` | `email`, `pending_email`, `pending_expires`, `has_password`, `cancel_url`, `success`, `errors`, `error`, `old` |
-| `accounts:delete_form` | `pending`, `scheduled_for`, `grace_days`, `has_password`, `success`, `errors`, `error` |
+| `accounts:change_email_form` | `email`, `pending_email`, `pending_expires`, `elevated`, `locked`, `cancel_url`, `success`, `errors`, `error`, `old` |
+| `accounts:delete_form` | `pending`, `scheduled_for`, `grace_days`, `blockers`, `elevated`, `locked`, `success`, `errors`, `error` |
 | `accounts:export_url` | the URL |
 | `accounts:status` | `kind` (`success`/`error`), `message` |
 | `accounts:impersonating` | `stop_url`, `impersonator` |
 | `accounts:verified` | bool |
 
-Changing the address and deleting ask for the current `password`. An account without
-one (passkey or OAuth only) confirms by typing its address into `confirm`.
+**Confirmation is Statamic's elevated session.** Changing the address, deleting and
+downloading the data need one (`statamic.users.elevated_sessions_enabled`). Without it
+the visitor is sent to core's confirmation page (password, passkey or mailed code,
+whatever the account has) and comes back to where they were; the download starts on
+its own. `elevated` tells a template whether the session already is. With elevated
+sessions switched off in Statamic there is no second confirmation, as for core's own
+sensitive actions.
+
+**While an admin is signed in as the customer** (`locked`), all three answer 403: they
+are the person's own decisions. The services refuse too (`AccountException` with
+`field = impersonation`), so an API layer cannot skip it.
 
 ### Middleware
 
@@ -158,6 +170,54 @@ sends the default text shipped in `lang/{de,en}/mail.php`. Placeholders:
 `{{ old_email }}`, `{{ scheduled_for }}`, `{{ grace_days }}`, `{{ expires_in_hours }}`,
 `{{ site_name }}`. Mails are sent, not queued.
 
+## Deleting: what goes, what stays
+
+When a deletion is due, `accounts:purge` asks every eraser whether anything stands in
+the way, dispatches `AccountDeleting`, runs all erasers in one database transaction,
+deletes the user and stores the result on the deletion request (row counts only, no
+values). A failing eraser rolls the others back; the account stays scheduled.
+
+| Addon | On deletion |
+|---|---|
+| accounts | Address changes deleted; the deletion request stays as the record, address blacked out |
+| activity | `activity:anonymize --user=<id>` (the ledger's own API): entries under the user id keep type and time, lose user, actor, properties, context. Entries recorded under *another* user id that mention the person are beyond that API and stay; the record says so |
+| entitlements | Grants held by the user and by the address deleted; team grants stay with the team |
+| leadhub | Contact deleted with events, notes, follow-ups, tasks, revenue lines (database driver) |
+| notifications | Notifications, preferences, digest runs deleted |
+| teams | Memberships removed; a team held alone without other members is deleted with its invitations and roles; an ownership shared with another owner passes to them; the person's id comes off invitations they sent |
+| payments | **Kept**, untouched: accounting records, ten years (§ 147 AO, § 14b UStG) |
+| invoices | **Kept**, untouched: tax documents, ten years |
+
+**What blocks a deletion** (at the request and again when it is due):
+
+- A subscription that still charges (`pending`, `active`, `paused`, `suspended`).
+  `deletion.active_subscriptions = block` (default) refuses with a link to the customer
+  portal; `cancel` cancels it through payments' own `Subscriptions::cancel()` when the
+  deletion is requested, and blocks only if that fails.
+- Being the only owner of a team that has other members. Transfer the ownership first.
+
+```php
+use Goldnead\Accounts\Contracts\ErasesPersonalData;
+use Goldnead\Accounts\PersonalData\ErasureResult;
+
+class CourseProgressEraser implements ErasesPersonalData
+{
+    public function key(): string { return 'courses'; }
+    public function label(): string { return 'Courses'; }
+    public function available(): bool { return true; }
+    public function blockers(User $user): array { return []; }   // sentences for the customer
+    public function erase(User $user): ErasureResult
+    {
+        $n = Progress::where('user_id', $user->id())->delete();
+
+        return new ErasureResult('courses', deleted: ['progress' => $n]);
+    }
+}
+
+Accounts::eraseData(CourseProgressEraser::class);
+// or: $this->app->tag([CourseProgressEraser::class], 'accounts.personal-data-erasers');
+```
+
 ## Personal data export
 
 ```php
@@ -181,7 +241,8 @@ Shipped contributors, each active only when its addon's tables exist: `account`,
 `payments` (payments, items, subscriptions, withdrawals, cancellations by address),
 `entitlements` (grants held by the address or the user), `leadhub` (contact by address
 or user id, with events, notes, follow-ups, revenue; database driver only),
-`notifications` (items, preferences, digests), `teams` (memberships). They read the
+`notifications` (items, preferences, digests), `teams` (memberships), `invoices`
+(invoices and lines by buyer address), `activity` (ledger entries under the user id). They read the
 siblings' tables directly, across all brands, and leave out password hashes, tokens and
 IP hashes. A contributor registered later under the same key replaces the shipped one.
 
@@ -204,7 +265,8 @@ IP hashes. A contributor registered later under the same key replaces the shippe
 | Permission | Allows |
 |---|---|
 | `view accounts` | the list, the overview, the wiring screen |
-| `manage accounts` | confirmation and deletion actions |
+| `manage accounts` | send the confirmation link, mark as confirmed, withdraw a deletion |
+| `delete users` (core) | schedule a deletion; a super admin only by a super admin |
 | `export account data` | the export from the Control Panel |
 | `manage accounts settings` | the settings screen (with brand-context) |
 | `impersonate users` (core) | "Sign in as" |
@@ -234,7 +296,9 @@ who really acted.
 | `email_change.expire_minutes` | `1440` | |
 | `email_change.notify_old_address` | `true` | |
 | `email_change.redirect` | `/` | |
-| `deletion.grace_days` | `14` | |
+| `deletion.grace_days` | `14` | At least 1 |
+| `deletion.active_subscriptions` | `block` | `block` or `cancel`, see above |
+| `deletion.portal_url` | `''` | Where the subscription blocker links; empty: payments' portal |
 | `deletion.logout` | `false` | Sign out after requesting |
 | `deletion.redirect` | `/` | Where the withdraw link lands |
 | `export.enabled` | `true` | Off: the customer's export answers 404 (the CP export stays) |
@@ -266,7 +330,8 @@ Accounts::emailChange()->pending($user);                      // ?AccountRequest
 Accounts::emailChange()->confirm($requestId, $hash);          // User; throws AccountException
 Accounts::emailChange()->cancel($user);                       // bool
 
-Accounts::deletion()->request($user, $by);    // AccountRequest (idempotent while pending)
+Accounts::deletion()->blockers($user);        // list<string>; with the cancel policy, cancels first
+Accounts::deletion()->request($user, $by);    // AccountRequest (idempotent while pending); throws AccountException when blocked or impersonating
 Accounts::deletion()->pending($user);         // ?AccountRequest, ->due_at
 Accounts::deletion()->cancel($user, $by);     // bool
 Accounts::deletion()->graceDays();            // int
@@ -279,7 +344,14 @@ Accounts::overview()->for($user);             // the customer overview as arrays
 Accounts::impersonation()->allowed($admin, $user);
 Accounts::impersonation()->start($admin, $user);   // redirect URL; throws AuthorizationException
 Accounts::contributeData(MyContributor::class);
+Accounts::eraseData(MyEraser::class);
+Accounts::erasure()->erase($user);            // array<key, ErasureResult>; normally only via the purge
 ```
+
+`emailChange()->request()`, `deletion()->request()` and `export()->build($user, 'customer')`
+refuse while an impersonation is active. They do not check the elevated session; that
+is the caller's HTTP concern (this addon's controllers do it, an API layer decides for
+itself).
 
 `Goldnead\Accounts\Exceptions\AccountException` carries a customer-facing message and
 the form `field` it belongs to, ready to become a 422.

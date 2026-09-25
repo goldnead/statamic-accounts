@@ -90,4 +90,39 @@ return [
     'integration_identity_help' => 'While impersonating, the customer is the actor and the admin is in impersonated_by.',
     'integration_brand_context' => 'Brand Context',
     'integration_brand_context_help' => 'Grace period, link lifetimes and templates per brand under Settings.',
+    'blockers' => 'Standing in the way of deletion',
+    'open_in_activity' => 'Open in the activity log',
+
+    'status' => [
+        'paid' => 'Paid', 'open' => 'Open', 'pending' => 'Pending', 'initiated' => 'Started',
+        'failed' => 'Failed', 'expired' => 'Expired', 'canceled' => 'Aborted', 'cancelled' => 'Cancelled',
+        'refunded' => 'Refunded', 'partially_refunded' => 'Partly refunded', 'chargeback' => 'Chargeback',
+        'active' => 'Active', 'paused' => 'Paused', 'suspended' => 'Suspended', 'completed' => 'Completed',
+        'revoked' => 'Revoked', 'grace' => 'Grace period', 'fulfilled' => 'Fulfilled', 'authorized' => 'Authorised',
+    ],
+    'source' => [
+        'payment' => 'Purchase', 'manual' => 'Manual', 'course' => 'Course', 'team' => 'Team', 'offer' => 'Offer',
+        'subscription' => 'Subscription', 'lead-magnet' => 'Lead magnet', 'import' => 'Import', 'gift' => 'Gift', 'trial' => 'Trial',
+    ],
+    'role' => [
+        'owner' => 'Owner', 'admin' => 'Admin', 'member' => 'Member', 'viewer' => 'Viewer', 'billing' => 'Billing',
+    ],
+    'interval' => [
+        'every_day' => 'daily', 'every_week' => 'weekly', 'every_month' => 'monthly', 'every_year' => 'yearly',
+        'every_n_day' => 'every :count days', 'every_n_week' => 'every :count weeks', 'every_n_month' => 'every :count months', 'every_n_year' => 'every :count years',
+    ],
+    'activity' => [
+        'accounts_email_verified' => 'Email confirmed',
+        'accounts_email_changed' => 'Address changed',
+        'accounts_deletion_requested' => 'Deletion scheduled',
+        'accounts_deletion_cancelled' => 'Deletion withdrawn',
+        'accounts_deleted' => 'Account deleted',
+        'accounts_data_exported' => 'Data exported',
+        'accounts_impersonation_started' => 'Impersonation started',
+        'accounts_impersonation_ended' => 'Impersonation ended',
+        'commerce_purchase_completed' => 'Purchase completed',
+        'marketing_subscription_confirmed' => 'Newsletter confirmed',
+        'marketing_unsubscribed' => 'Newsletter unsubscribed',
+        'crm_contact_created' => 'Contact created',
+    ],
 ];

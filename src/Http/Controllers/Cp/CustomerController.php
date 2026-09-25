@@ -2,6 +2,7 @@
 
 namespace Goldnead\Accounts\Http\Controllers\Cp;
 
+use Goldnead\Accounts\Exceptions\AccountException;
 use Goldnead\Accounts\Models\AccountRequest;
 use Goldnead\Accounts\Services\AccountDeletion;
 use Goldnead\Accounts\Services\CustomerOverview;
@@ -104,6 +105,7 @@ class CustomerController extends CpController
             ],
             'can' => [
                 'manage' => $me?->can('manage accounts') ?? false,
+                'delete' => $this->mayDelete($customer),
                 'export' => ($me?->can('export account data') ?? false) && config('accounts.export.enabled', true),
                 'impersonate' => $me !== null && $impersonation->allowed($me, $customer),
                 'edit' => $me?->can('edit', $customer) ?? false,
@@ -150,14 +152,43 @@ class CustomerController extends CpController
         return back();
     }
 
+    /**
+     * Scheduling a deletion is deleting a user: core's `delete users`
+     * (UserPolicy::delete) decides, and a super admin is only deleted by a
+     * super admin.
+     */
     public function scheduleDeletion(AccountDeletion $deletion, string $user): RedirectResponse
     {
-        $this->authorize('manage accounts');
+        $customer = $this->find($user);
 
-        $deletion->request($this->find($user), Users::current());
+        abort_unless($this->mayDelete($customer), 403);
+
+        try {
+            $deletion->request($customer, Users::current());
+        } catch (AccountException $e) {
+            Toast::error($e->getMessage());
+
+            return back();
+        }
+
         Toast::success(__('accounts::messages.deletion_scheduled'));
 
         return back();
+    }
+
+    protected function mayDelete(UserContract $customer): bool
+    {
+        $me = Users::current();
+
+        if ($me === null || (string) $me->id() === (string) $customer->id()) {
+            return false;
+        }
+
+        if ($customer->isSuper() && ! $me->isSuper()) {
+            return false;
+        }
+
+        return $me->can('delete', $customer);
     }
 
     public function cancelDeletion(AccountDeletion $deletion, string $user): RedirectResponse

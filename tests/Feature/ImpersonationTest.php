@@ -2,6 +2,7 @@
 
 namespace Goldnead\Accounts\Tests\Feature;
 
+use Goldnead\Accounts\Facades\Accounts;
 use Goldnead\Accounts\Services\Impersonation;
 use Goldnead\Accounts\Tests\TestCase;
 use Goldnead\Activity\Facades\Activity;
@@ -102,6 +103,28 @@ class ImpersonationTest extends TestCase
 
         // Outside the request, nothing stays pinned.
         $this->assertArrayNotHasKey('impersonated_by', IdentityContext::current()->meta);
+    }
+
+    #[Test]
+    public function what_happens_during_an_impersonation_names_the_admin_as_actor(): void
+    {
+        $customer = $this->makeUser();
+        $admin = $this->cpUser('admin@example.com');
+
+        $this->actingAs($customer);
+        session([Impersonation::SESSION_KEY => (string) $admin->id()]);
+        // As the middleware pins it during the request.
+        IdentityContext::setCurrent(IdentityContext::resolve($customer)->withMeta(['impersonated_by' => (string) $admin->id()]));
+
+        Accounts::verification()->markVerified($customer);
+
+        IdentityContext::setCurrent(null);
+
+        $entry = collect(Activity::$recorded)->firstWhere('type', 'accounts.email_verified');
+        $this->assertNotNull($entry);
+        $actor = $entry['attributes']['actor'];
+        $this->assertSame((string) $admin->id(), $actor->userId ?? $actor->id);
+        $this->assertSame((string) $customer->id(), $actor->meta['acting_as']);
     }
 
     #[Test]

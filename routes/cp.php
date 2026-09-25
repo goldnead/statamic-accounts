@@ -35,9 +35,11 @@ Route::prefix('accounts')->name('accounts.')->group(function () {
             ->name('verification.mark')
             ->middleware('can:manage accounts');
 
+        // Core's `delete users` through UserPolicy, checked in the controller
+        // because it depends on the target (super admins).
         Route::post('/deletion', [CustomerController::class, 'scheduleDeletion'])
             ->name('deletion.schedule')
-            ->middleware('can:manage accounts');
+            ->middleware('can:view accounts');
 
         Route::delete('/deletion', [CustomerController::class, 'cancelDeletion'])
             ->name('deletion.cancel')

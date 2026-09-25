@@ -6,27 +6,37 @@ use Goldnead\Accounts\Exceptions\AccountException;
 use Goldnead\Accounts\Services\AccountDeletion;
 use Goldnead\Accounts\Services\EmailChange;
 use Goldnead\Accounts\Services\EmailVerification;
+use Goldnead\Accounts\Services\Impersonation;
 use Goldnead\Accounts\Services\PersonalDataExport;
 use Goldnead\Accounts\Support\Users as User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\MessageBag;
 use Statamic\Auth\User as UserContract;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * The forms rendered by the `accounts:*` tags.
  *
  * Every form answers like Statamic's own user forms: a redirect back (or to
  * `_redirect`), success in the session, errors in a named error bag the tag
- * reads again. Changing the address and deleting the account ask for the
- * current password, the same way core's password form does.
+ * reads again.
+ *
+ * Changing the address, deleting the account and downloading its data ask
+ * for Statamic's elevated session (`statamic.users.elevated_sessions_enabled`):
+ * core's confirmation page, which takes the password, a passkey or a mailed
+ * code, whatever the account has. Without one the visitor is sent there and
+ * comes back to the page they were on. With elevated sessions switched off
+ * in Statamic, there is no second confirmation, exactly as for core's own
+ * sensitive actions. While an admin is signed in as the customer, the three
+ * answer 403.
  */
 class AccountController extends Controller
 {
+    public function __construct(protected Impersonation $impersonation) {}
+
     public function resendVerification(Request $request, EmailVerification $verification): RedirectResponse
     {
         $user = $this->user();
@@ -35,12 +45,12 @@ class AccountController extends Controller
         return $this->success($request, 'verify', __('accounts::messages.verification_sent'));
     }
 
-    public function changeEmail(Request $request, EmailChange $emailChange): RedirectResponse
+    public function changeEmail(Request $request, EmailChange $emailChange): Response
     {
         $user = $this->user();
 
-        if ($failed = $this->checkPassword($request, $user, 'change_email')) {
-            return $failed;
+        if ($guard = $this->guard($request, url()->previous())) {
+            return $guard;
         }
 
         try {
@@ -59,15 +69,19 @@ class AccountController extends Controller
         return $this->success($request, 'change_email', __('accounts::messages.email_change_cancelled'));
     }
 
-    public function requestDeletion(Request $request, AccountDeletion $deletion): RedirectResponse
+    public function requestDeletion(Request $request, AccountDeletion $deletion): Response
     {
         $user = $this->user();
 
-        if ($failed = $this->checkPassword($request, $user, 'delete')) {
-            return $failed;
+        if ($guard = $this->guard($request, url()->previous())) {
+            return $guard;
         }
 
-        $deletion->request($user);
+        try {
+            $deletion->request($user);
+        } catch (AccountException $e) {
+            return $this->failure($request, 'delete', $e->field, $e->getMessage());
+        }
 
         if (config('accounts.deletion.logout', false)) {
             Auth::guard()->logout();
@@ -85,11 +99,19 @@ class AccountController extends Controller
         return $this->success($request, 'delete', __('accounts::messages.deletion_cancelled'));
     }
 
-    public function export(Request $request, PersonalDataExport $export): BinaryFileResponse
+    public function export(Request $request, PersonalDataExport $export): Response
     {
         abort_unless(config('accounts.export.enabled', true), 404);
 
-        $file = $export->build($this->user());
+        $user = $this->user();
+
+        // After the confirmation the browser comes straight back here and the
+        // download starts.
+        if ($guard = $this->guard($request, $request->fullUrl())) {
+            return $guard;
+        }
+
+        $file = $export->build($user);
 
         return response()->download($file['path'], $file['filename'], ['Content-Type' => $file['mime']])
             ->deleteFileAfterSend();
@@ -105,22 +127,24 @@ class AccountController extends Controller
     }
 
     /**
-     * The current password, when the account has one. An account without
-     * (passkey or OAuth only) confirms by typing its own address instead.
+     * 403 while impersonating, core's confirmation page without an elevated
+     * session, null when the request may go on.
      */
-    protected function checkPassword(Request $request, UserContract $user, string $form): ?RedirectResponse
+    protected function guard(Request $request, string $returnTo): ?RedirectResponse
     {
-        $hash = $user->password();
+        abort_if($this->impersonation->active(), 403, __('accounts::messages.impersonation_locked'));
 
-        if (filled($hash)) {
-            return Hash::check((string) $request->input('password', ''), (string) $hash)
-                ? null
-                : $this->failure($request, $form, 'password', __('accounts::messages.password_wrong'));
+        if (! config('statamic.users.elevated_sessions_enabled') || $request->hasElevatedSession()) {
+            return null;
         }
 
-        return mb_strtolower(trim((string) $request->input('confirm', ''))) === mb_strtolower((string) $user->email())
-            ? null
-            : $this->failure($request, $form, 'confirm', __('accounts::messages.confirm_wrong'));
+        $to = $request->input('_redirect');
+
+        if (is_string($to) && str_starts_with($to, '/') && ! str_starts_with($to, '//')) {
+            $returnTo = $to;
+        }
+
+        return redirect()->setIntendedUrl($returnTo)->to(route('statamic.elevated-session'));
     }
 
     protected function success(Request $request, string $form, string $message): RedirectResponse
@@ -131,7 +155,7 @@ class AccountController extends Controller
     protected function failure(Request $request, string $form, string $field, string $message): RedirectResponse
     {
         return $this->back($request)
-            ->withInput($request->except(['password', 'confirm']))
+            ->withInput()
             ->withErrors(new MessageBag([$field => $message]), 'accounts.'.$form);
     }
 

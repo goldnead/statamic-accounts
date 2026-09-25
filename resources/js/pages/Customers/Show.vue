@@ -4,7 +4,7 @@ import { Head, Link, router } from '@statamic/cms/inertia';
 import { requireElevatedSession } from '@statamic/cms';
 import {
     Header, Button, Badge, Panel, Card, Avatar, Dropdown, DropdownMenu, DropdownItem, DropdownSeparator,
-    ConfirmationModal, CommandPaletteItem, Table, TableColumns, TableColumn, TableRows, TableRow, TableCell,
+    Alert, ConfirmationModal, CommandPaletteItem, Table, TableColumns, TableColumn, TableRows, TableRow, TableCell,
 } from '@statamic/cms/ui';
 
 const props = defineProps([
@@ -72,14 +72,14 @@ const statusColor = (status) => ({
         <Head :title="[account.email, t.customers]" />
 
         <Header :title="account.name || account.email" icon="user-avatar">
-            <Dropdown v-if="can.manage || can.edit">
+            <Dropdown v-if="can.manage || can.edit || can.delete">
                 <DropdownMenu>
                     <DropdownItem v-if="can.edit" :text="t.edit_user" icon="user-edit" :href="urls.edit" />
                     <DropdownItem v-if="can.manage && !account.verified" :text="t.resend" icon="mail-send-email-attachment-document" @click="post(urls.resend)" />
                     <DropdownItem v-if="can.manage && !account.verified" :text="t.mark_verified" icon="mail-check" @click="post(urls.verify)" />
-                    <DropdownSeparator v-if="can.manage" />
+                    <DropdownSeparator v-if="can.manage || can.delete" />
                     <DropdownItem v-if="can.manage && account.deletion_due" :text="t.cancel_deletion" icon="history" @click="post(urls.cancelDeletion, 'delete')" />
-                    <DropdownItem v-if="can.manage && !account.deletion_due" :text="t.schedule_deletion" icon="trash" variant="destructive" @click="confirmDeletion = true" />
+                    <DropdownItem v-if="can.delete && !account.deletion_due" :text="t.schedule_deletion" icon="trash" variant="destructive" @click="confirmDeletion = true" />
                 </DropdownMenu>
             </Dropdown>
             <Button :href="urls.index" :text="t.back" />
@@ -120,7 +120,7 @@ const statusColor = (status) => ({
                                     <TableCell class="tabular-nums whitespace-nowrap">{{ row.date }}</TableCell>
                                     <TableCell>{{ row.product }}</TableCell>
                                     <TableCell class="text-right tabular-nums whitespace-nowrap">{{ row.amount }}</TableCell>
-                                    <TableCell><Badge :color="statusColor(row.status)" :text="row.status" pill /></TableCell>
+                                    <TableCell><Badge :color="statusColor(row.status)" :text="row.status_label || row.status" pill /></TableCell>
                                 </TableRow>
                             </TableRows>
                         </Table>
@@ -137,9 +137,9 @@ const statusColor = (status) => ({
                                 <TableRow v-for="row in section('subscriptions').rows" :key="row.id">
                                     <TableCell>{{ row.product }}</TableCell>
                                     <TableCell class="text-right tabular-nums whitespace-nowrap">{{ row.amount }}</TableCell>
-                                    <TableCell>{{ row.interval }}</TableCell>
+                                    <TableCell>{{ row.interval_label || row.interval }}</TableCell>
                                     <TableCell class="tabular-nums">{{ row.next_payment || '–' }}</TableCell>
-                                    <TableCell><Badge :color="statusColor(row.status)" :text="row.status" pill /></TableCell>
+                                    <TableCell><Badge :color="statusColor(row.status)" :text="row.status_label || row.status" pill /></TableCell>
                                 </TableRow>
                             </TableRows>
                         </Table>
@@ -155,10 +155,10 @@ const statusColor = (status) => ({
                             <TableRows>
                                 <TableRow v-for="row in section('entitlements').rows" :key="row.id">
                                     <TableCell class="font-medium">{{ row.product }}</TableCell>
-                                    <TableCell>{{ row.source }}</TableCell>
+                                    <TableCell>{{ row.source_label || row.source }}</TableCell>
                                     <TableCell>{{ row.held_by === 'email' ? t.held_by_email : t.held_by_user }}</TableCell>
                                     <TableCell class="tabular-nums">{{ row.expires || '–' }}</TableCell>
-                                    <TableCell><Badge :color="statusColor(row.status)" :text="row.status" pill /></TableCell>
+                                    <TableCell><Badge :color="statusColor(row.status)" :text="row.status_label || row.status" pill /></TableCell>
                                 </TableRow>
                             </TableRows>
                         </Table>
@@ -175,7 +175,7 @@ const statusColor = (status) => ({
                                         {{ row.team }}
                                         <Badge v-if="row.owner" class="ms-2" :text="t.owner" pill />
                                     </TableCell>
-                                    <TableCell>{{ row.role }}</TableCell>
+                                    <TableCell>{{ row.role_label || row.role }}</TableCell>
                                     <TableCell class="tabular-nums">{{ row.joined_at || '–' }}</TableCell>
                                 </TableRow>
                             </TableRows>
@@ -226,6 +226,17 @@ const statusColor = (status) => ({
                                 </dd>
                             </template>
                         </dl>
+
+                        <Alert
+                            v-if="account.blockers && account.blockers.length"
+                            class="mt-4"
+                            variant="warning"
+                            :heading="t.blockers"
+                        >
+                            <ul class="list-disc ps-4 space-y-1">
+                                <li v-for="(blocker, i) in account.blockers" :key="i">{{ blocker }}</li>
+                            </ul>
+                        </Alert>
                     </Card>
                 </Panel>
 
@@ -239,7 +250,7 @@ const statusColor = (status) => ({
                         </p>
                         <ul v-else class="space-y-2 text-sm">
                             <li v-for="row in section('activity').rows" :key="row.id" class="flex justify-between gap-3">
-                                <code class="text-xs truncate">{{ row.type }}</code>
+                                <span class="truncate" :title="row.type">{{ row.label || row.type }}</span>
                                 <span class="tabular-nums text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ row.date }}</span>
                             </li>
                         </ul>

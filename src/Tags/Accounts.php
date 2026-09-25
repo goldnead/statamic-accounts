@@ -2,10 +2,12 @@
 
 namespace Goldnead\Accounts\Tags;
 
+use Goldnead\Accounts\PersonalData\ErasureRegistry;
 use Goldnead\Accounts\Services\AccountDeletion;
 use Goldnead\Accounts\Services\EmailChange;
 use Goldnead\Accounts\Services\EmailVerification;
 use Goldnead\Accounts\Services\Impersonation;
+use Goldnead\Accounts\Services\PersonalDataErasure;
 use Goldnead\Accounts\Support\Users as User;
 use Illuminate\Contracts\Support\MessageBag as MessageBagContract;
 use Illuminate\Support\MessageBag;
@@ -65,12 +67,14 @@ class Accounts extends Tags
     }
 
     /**
-     * Form for a new address. Fields: `email` (the new one) and `password`
-     * (or `confirm` with the current address for accounts without one).
+     * Form for a new address. One field: `email` (the new one). Confirmation
+     * is Statamic's elevated session: without one, submitting leads to
+     * core's confirmation page and back.
      *
-     * Variables: `email`, `pending_email`, `pending_expires`, `has_password`,
-     * `cancel_url` (POST target to withdraw a pending change), `success`,
-     * `errors`, `error`, `old`.
+     * Variables: `email`, `pending_email`, `pending_expires`, `elevated`,
+     * `locked` (an admin is signed in as this customer), `cancel_url` (POST
+     * target to withdraw a pending change), `success`, `errors`, `error`,
+     * `old`.
      */
     public function changeEmailForm(): string
     {
@@ -86,18 +90,20 @@ class Accounts extends Tags
             'email' => $user->email(),
             'pending_email' => $pending?->email,
             'pending_expires' => $pending?->due_at?->isoFormat('LLL'),
-            'has_password' => filled($user->password()),
             'cancel_url' => route('statamic.accounts.email.cancel'),
+            ...$this->confirmationState(),
         ]);
     }
 
     /**
-     * Form to schedule the account's deletion. Same confirmation fields as
-     * the address form. While a deletion is pending, `pending` is true and
-     * the form posts to the withdrawal instead.
+     * Form to schedule the account's deletion, confirmed like the address
+     * form. While a deletion is pending, `pending` is true and the form posts
+     * to the withdrawal instead. `blockers` lists what stands in the way (a
+     * running subscription, a team the person holds alone); submitting while
+     * there are any shows them as `error:account`.
      *
-     * Variables: `pending`, `scheduled_for`, `grace_days`, `has_password`,
-     * `success`, `errors`, `error`.
+     * Variables: `pending`, `scheduled_for`, `grace_days`, `blockers`,
+     * `elevated`, `locked`, `success`, `errors`, `error`.
      */
     public function deleteForm(): string
     {
@@ -118,8 +124,40 @@ class Accounts extends Tags
             'pending' => $pending !== null,
             'scheduled_for' => $pending?->due_at?->isoFormat('LL'),
             'grace_days' => $deletion->graceDays(),
-            'has_password' => filled($user->password()),
+            // Asked only while nothing is pending. With the `cancel` policy
+            // this does not cancel anything: that happens on submit.
+            'blockers' => $pending === null ? $this->blockersWithoutSideEffects($user) : [],
+            ...$this->confirmationState(),
         ]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function blockersWithoutSideEffects(\Statamic\Auth\User $user): array
+    {
+        $blockers = [];
+
+        foreach (app(ErasureRegistry::class)->available() as $key => $eraser) {
+            if ($key === 'payments' && app(PersonalDataErasure::class)->subscriptionPolicy() === 'cancel') {
+                continue;
+            }
+
+            $blockers = array_merge($blockers, $eraser->blockers($user));
+        }
+
+        return $blockers;
+    }
+
+    /**
+     * @return array{elevated: bool, locked: bool}
+     */
+    protected function confirmationState(): array
+    {
+        return [
+            'elevated' => ! config('statamic.users.elevated_sessions_enabled') || request()->hasElevatedSession(),
+            'locked' => app(Impersonation::class)->active(),
+        ];
     }
 
     /**

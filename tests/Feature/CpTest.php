@@ -3,6 +3,7 @@
 namespace Goldnead\Accounts\Tests\Feature;
 
 use Goldnead\Accounts\Facades\Accounts;
+use Goldnead\Accounts\Support\Labels;
 use Goldnead\Accounts\Tests\Concerns\SeedsSiblingTables;
 use Goldnead\Accounts\Tests\TestCase;
 use Illuminate\Support\Facades\Mail;
@@ -27,7 +28,7 @@ class CpTest extends TestCase
             'export' => ['get', 'accounts.customers.export', 'export account data'],
             'resend' => ['post', 'accounts.customers.verification.resend', 'manage accounts'],
             'mark' => ['post', 'accounts.customers.verification.mark', 'manage accounts'],
-            'schedule' => ['post', 'accounts.customers.deletion.schedule', 'manage accounts'],
+            'schedule' => ['post', 'accounts.customers.deletion.schedule', 'delete users'],
             'cancel' => ['delete', 'accounts.customers.deletion.cancel', 'manage accounts'],
         ];
     }
@@ -91,6 +92,36 @@ class CpTest extends TestCase
     }
 
     #[Test]
+    public function codes_arrive_translated(): void
+    {
+        require_once __DIR__.'/../Fakes/siblings.php';
+        app()->setLocale('de');
+        $this->createSiblingTables();
+        $customer = $this->makeUser();
+        $this->seedSiblingRows($customer);
+        $admin = $this->cpUser('admin@example.com', ['view accounts']);
+
+        $this->actingAs($admin)
+            ->get(cp_route('accounts.customers.show', $customer->id()))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('overview.payments.rows.0.status', 'paid')
+                ->where('overview.payments.rows.0.status_label', 'Bezahlt')
+                ->where('overview.subscriptions.rows.0.status_label', 'Aktiv')
+                ->where('overview.subscriptions.rows.0.interval_label', 'monatlich')
+                ->where('overview.entitlements.rows.0.source_label', 'Kauf')
+                ->where('overview.teams.rows.0.role_label', 'Inhaber:in')
+                ->where('overview.activity.rows.0.label', 'E-Mail bestätigt')
+                ->where('overview.activity.rows.1.label', 'Kauf abgeschlossen'));
+
+        // A type nobody translated reads as words, not as a code. (The
+        // request above reset the locale.)
+        app()->setLocale('de');
+        $this->assertSame('Booking: Slot moved', Labels::activity('booking.slot_moved'));
+        $this->assertSame('alle 3 Monate', Labels::interval('3 months'));
+        $this->assertSame('jährlich', Labels::interval('year'));
+    }
+
+    #[Test]
     public function without_the_sibling_tables_the_sections_say_not_installed(): void
     {
         $customer = $this->makeUser();
@@ -109,7 +140,8 @@ class CpTest extends TestCase
     {
         Mail::fake();
         $customer = $this->makeUser();
-        $admin = $this->cpUser('admin@example.com', ['view accounts', 'manage accounts']);
+        // `delete` is the UserPolicy ability behind core's `delete users`.
+        $admin = $this->cpUser('admin@example.com', ['view accounts', 'manage accounts', 'delete']);
 
         $this->actingAs($admin)->post(cp_route('accounts.customers.deletion.schedule', $customer->id()))->assertRedirect();
         $this->assertNotNull(Accounts::deletion()->pending($customer));

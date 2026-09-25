@@ -15,6 +15,9 @@ return [
             'description' => 'Slugs in Email Templates. Ein Slug ohne Eintrag verschickt den Text, den das Addon mitbringt.',
         ],
     ],
+    'options' => [
+        'active_subscriptions' => ['block' => 'Löschung blockieren', 'cancel' => 'Abos kündigen'],
+    ],
     'fields' => [
         'verification_enabled' => ['label' => 'Bestätigung verlangen', 'description' => 'Aus: die Middleware accounts.verified lässt alle durch, kein Hinweis erscheint.'],
         'verification_send_on_register' => ['label' => 'Nach der Registrierung senden', 'description' => 'Schickt den Link direkt nach dem Registrierungsformular.'],
@@ -22,7 +25,9 @@ return [
         'verification_notice_url' => ['label' => 'Seite für unbestätigte Konten', 'description' => 'Wohin die Middleware accounts.verified angemeldete Nutzer ohne bestätigte Adresse schickt.'],
         'email_change_expire_minutes' => ['label' => 'Änderungslink gilt (Minuten)', 'description' => 'Wie lange der Link an eine neue Adresse funktioniert.'],
         'email_change_notify_old_address' => ['label' => 'Alte Adresse informieren', 'description' => 'Schickt einen Hinweis an die bisherige Adresse, sobald die neue bestätigt ist.'],
-        'deletion_grace_days' => ['label' => 'Frist (Tage)', 'description' => 'So viele Tage nach dem Antrag wird das Konto gelöscht. 0 löscht beim nächsten täglichen Lauf.'],
+        'deletion_grace_days' => ['label' => 'Frist (Tage)', 'description' => 'So viele Tage nach dem Antrag wird das Konto gelöscht. Mindestens 1, damit der Link zum Zurückziehen geöffnet werden kann.'],
+        'deletion_active_subscriptions' => ['label' => 'Laufende Abos', 'description' => 'Blockieren: die Löschung wird abgelehnt, mit Link zum Kundenportal. Kündigen: laufende Abos werden beim Antrag über Payments gekündigt.'],
+        'deletion_portal_url' => ['label' => 'Adresse des Kundenportals', 'description' => 'Wohin der Hinweis bei einem laufenden Abo verlinkt. Leer: das Kundenportal von Payments.'],
         'deletion_logout' => ['label' => 'Nach dem Antrag abmelden', 'description' => 'Aus: die Person bleibt angemeldet und kann den Antrag im Konto zurückziehen.'],
         'export_enabled' => ['label' => 'Kunden dürfen ihre Daten herunterladen', 'description' => 'Aus: der Export-Link antwortet mit 404. Der Export im Control Panel bleibt.'],
         'mail_templates_verify_email' => ['label' => 'Adresse bestätigen', 'description' => 'Slug der Bestätigungsmail.'],

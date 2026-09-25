@@ -46,8 +46,10 @@ return [
         'preview' => 'Until then you can change your mind.',
         'description' => 'Sent when a deletion is requested. Placeholders: user.name, scheduled_for, grace_days, action_url (withdraw).',
         'body' => '<p>Hi {{ user.name }},</p>'
-            .'<p>your account at {{ site_name }} is scheduled for deletion. On {{ scheduled_for }} we delete it along with the data attached to it.</p>'
-            .'<p>Until then you can withdraw the request:</p>'
+            .'<p>your account at {{ site_name }} is scheduled for deletion. On {{ scheduled_for }} we delete it.</p>'
+            .'<p><strong>What we delete:</strong> your account, your access grants, your team memberships, your CRM contact with its notes and history, your notifications and preferences. Activity log entries are anonymised.</p>'
+            .'<p><strong>What stays:</strong> invoices and payment records with name and address. We have to keep them for ten years (§ 147 AO, § 14b UStG). After that they are deleted.</p>'
+            .'<p>Until {{ scheduled_for }} you can withdraw the request:</p>'
             .$button('Keep my account'),
     ],
     'account_deleted' => [
@@ -56,6 +58,8 @@ return [
         'preview' => 'The grace period has ended.',
         'description' => 'Last mail after deletion. Placeholders: user.name, user.email.',
         'body' => '<p>Hi {{ user.name }},</p>'
-            .'<p>your account at {{ site_name }} is now deleted. Thank you for having been here.</p>',
+            .'<p>your account at {{ site_name }} is now deleted, with your access grants, team memberships, CRM contact and notifications.</p>'
+            .'<p>Invoices and payment records are kept for ten years for legal reasons (§ 147 AO, § 14b UStG). This is the last mail you get from your account.</p>'
+            .'<p>Thank you for having been here.</p>',
     ],
 ];

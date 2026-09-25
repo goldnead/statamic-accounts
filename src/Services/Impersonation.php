@@ -2,6 +2,7 @@
 
 namespace Goldnead\Accounts\Services;
 
+use Goldnead\Accounts\Exceptions\AccountException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Statamic\Actions\Impersonate;
 use Statamic\Auth\User;
@@ -57,7 +58,22 @@ class Impersonation
 
     public function active(): bool
     {
-        return session()->has(self::SESSION_KEY);
+        return app()->bound('session') && session()->has(self::SESSION_KEY);
+    }
+
+    /**
+     * Changing the address, deleting the account and taking a copy of its
+     * data are the customer's own decisions. An admin signed in as the
+     * customer does not make them; it is refused here, in the services, so
+     * an API layer calling them cannot skip it.
+     *
+     * @throws AccountException with field `impersonation`
+     */
+    public function refuseWhileActive(): void
+    {
+        if ($this->active()) {
+            throw new AccountException(__('accounts::messages.impersonation_locked'), 'impersonation');
+        }
     }
 
     public function impersonatorId(): ?string

@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Goldnead\Accounts\Services\CustomerOverview overview()
  * @method static \Goldnead\Accounts\Services\Impersonation impersonation()
  * @method static \Goldnead\Accounts\PersonalData\PersonalDataRegistry personalData()
+ * @method static \Goldnead\Accounts\Services\PersonalDataErasure erasure()
+ * @method static \Goldnead\Accounts\PersonalData\ErasureRegistry erasers()
+ * @method static AccountsManager eraseData(\Goldnead\Accounts\Contracts\ErasesPersonalData|string $eraser)
  * @method static AccountsManager contributeData(\Goldnead\Accounts\Contracts\ContributesPersonalData|string $contributor)
  *
  * @see AccountsManager

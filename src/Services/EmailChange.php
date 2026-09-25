@@ -26,6 +26,7 @@ class EmailChange
         protected AccountMailer $mailer,
         protected ActivityBridge $activity,
         protected EmailVerification $verification,
+        protected Impersonation $impersonation,
     ) {}
 
     /**
@@ -33,6 +34,8 @@ class EmailChange
      */
     public function request(User $user, string $newEmail): AccountRequest
     {
+        $this->impersonation->refuseWhileActive();
+
         $newEmail = trim($newEmail);
 
         if (! filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {

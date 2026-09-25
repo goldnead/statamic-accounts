@@ -80,7 +80,7 @@ class PersonalDataExportTest extends TestCase
 
         $this->assertStringEndsWith('.zip', $file['filename']);
         $this->assertEqualsCanonicalizing(
-            ['manifest.json', 'account.json', 'payments.json', 'entitlements.json', 'leadhub.json', 'notifications.json', 'teams.json', 'courses.json'],
+            ['manifest.json', 'account.json', 'payments.json', 'invoices.json', 'entitlements.json', 'leadhub.json', 'notifications.json', 'teams.json', 'courses.json'],
             array_keys($files),
         );
 

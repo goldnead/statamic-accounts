@@ -27,8 +27,6 @@ return [
     'email_unchanged' => 'That is already your address.',
     'email_taken' => 'Another account already uses this address.',
     'link_invalid' => 'This link is no longer valid. Request a new one.',
-    'password_wrong' => 'The password is not correct.',
-    'confirm_wrong' => 'Type your current email address to confirm.',
 
     'verification_sent' => 'We sent you a link to confirm your address.',
     'verification_required' => 'Please confirm your email address first.',
@@ -40,6 +38,19 @@ return [
     'deletion_scheduled' => 'Your account is scheduled for deletion.',
     'deletion_cancelled' => 'The deletion was withdrawn. Your account stays.',
     'impersonate_denied' => 'You may not sign in as this user.',
+    'impersonation_locked' => 'While impersonating, the address, the deletion and the data export cannot be changed. That is the person\'s own decision.',
+
+    'section_invoices' => 'Invoices',
+    'section_activity' => 'Activity log',
+
+    'blocker_subscription' => 'Your subscription ":product" is still running. Cancel it first, then you can delete your account.',
+    'blocker_subscription_portal' => 'Your subscription ":product" is still running. Cancel it first in the customer portal (:url), then you can delete your account.',
+    'blocker_subscription_cancel_failed' => 'Your subscription ":product" could not be cancelled automatically. Please cancel it yourself or write to us.',
+    'blocker_team_owner' => 'You are the only owner of ":team", which has :count other members. Transfer the ownership first.',
+
+    'retained_payments' => 'Payments and subscriptions are kept with name and address for ten years (§ 147 AO, § 14b UStG).',
+    'retained_invoices' => 'Invoices are kept with name and address for ten years (§ 147 AO, § 14b UStG).',
+    'activity_note' => 'Log entries under this user id are anonymised. Entries of other people (an admin, say) that mention this person are beyond the reach of Activity\'s anonymisation.',
 
     'purged' => '{0} No account was due for deletion.|{1} Deleted :count account.|[2,*] Deleted :count accounts.',
 ];

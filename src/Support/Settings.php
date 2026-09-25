@@ -55,7 +55,12 @@ class Settings implements ProvidesSettings
                 'title' => __('accounts::settings.groups.deletion.title'),
                 'description' => __('accounts::settings.groups.deletion.description'),
                 'fields' => [
-                    static::field('deletion.grace_days', 'integer', ['min' => 0]),
+                    static::field('deletion.grace_days', 'integer', ['min' => 1]),
+                    static::field('deletion.active_subscriptions', 'select', ['options' => [
+                        'block' => __('accounts::settings.options.active_subscriptions.block'),
+                        'cancel' => __('accounts::settings.options.active_subscriptions.cancel'),
+                    ]]),
+                    static::field('deletion.portal_url', 'string', ['nullable' => true]),
                     static::field('deletion.logout', 'boolean'),
                     static::field('export.enabled', 'boolean'),
                 ],
