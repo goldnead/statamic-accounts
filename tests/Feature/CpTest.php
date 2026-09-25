@@ -189,7 +189,7 @@ class CpTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('accounts::Wiring')
-                ->has('events', 9)
+                ->has('events', 10)
                 ->where('events.0.handle', 'accounts.verification.sent')
                 ->where('events.0.template.slug', 'accounts-verify-email')
                 ->where('events.1.template', null)

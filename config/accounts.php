@@ -46,8 +46,25 @@ return [
 
     'email_change' => [
         'expire_minutes' => 60 * 24,
+        // The current address hears of it twice: when a new one is entered
+        // (so a taken-over session cannot move the account silently) and once
+        // the new one is confirmed.
         'notify_old_address' => true,
         'redirect' => '/',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Changing the password
+    |--------------------------------------------------------------------------
+    |
+    | "Your password was changed", to the account's address, however it was
+    | changed: profile form, Control Panel, reset link, the host's own code.
+    |
+    */
+
+    'password_change' => [
+        'notify' => true,
     ],
 
     /*
@@ -109,6 +126,8 @@ return [
             'verify_email' => 'accounts-verify-email',
             'confirm_email_change' => 'accounts-confirm-email-change',
             'email_changed' => 'accounts-email-changed',
+            'email_change_requested' => 'accounts-email-change-requested',
+            'password_changed' => 'accounts-password-changed',
             'deletion_scheduled' => 'accounts-deletion-scheduled',
             'deletion_blocked' => 'accounts-deletion-blocked',
             'account_deleted' => 'accounts-account-deleted',

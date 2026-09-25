@@ -23,6 +23,7 @@ return [
         'grace_days' => 'Frist in Tagen',
         'reasons_list' => 'Was der Löschung im Weg steht (fertige Liste)',
         'link_days' => 'Gültigkeit des Links in Tagen',
+        'changed_at' => 'Zeitpunkt der Änderung',
     ],
     'verify_email' => [
         'title' => 'Konten: E-Mail-Adresse bestätigen',
@@ -55,6 +56,26 @@ return [
         'body' => '<p>Hallo {{ user.name }},</p>'
             .'<p>dein Konto bei {{ site_name }} läuft ab jetzt über {{ new_email }}. An {{ old_email }} kommen keine Kontomails mehr.</p>'
             .'<p>Warst du das nicht, antworte bitte sofort auf diese Mail.</p>',
+    ],
+    'email_change_requested' => [
+        'title' => 'Konten: Adressänderung angefragt, Hinweis an die bisherige Adresse',
+        'trigger' => 'Neue Adresse eingetragen, geht an die bisherige Adresse',
+        'subject' => 'Für dein Konto wurde eine neue E-Mail-Adresse eingetragen',
+        'preview' => 'Sie gilt erst, wenn der Link an {{ new_email }} geöffnet wird.',
+        'description' => 'Geht an die bisherige Adresse, sobald eine neue eingetragen ist, noch vor deren Bestätigung. Platzhalter: user.name, new_email, old_email.',
+        'body' => '<p>Hallo {{ user.name }},</p>'
+            .'<p>für dein Konto bei {{ site_name }} wurde {{ new_email }} als neue Adresse eingetragen. Sie gilt erst, wenn jemand den Link öffnet, der dorthin geschickt wurde. Bis dahin bleibt {{ old_email }} deine Adresse.</p>'
+            .'<p>Warst du das nicht, melde dich an, ändere dein Passwort und nimm die Änderung im Konto zurück, oder antworte auf diese Mail.</p>',
+    ],
+    'password_changed' => [
+        'title' => 'Konten: Passwort geändert',
+        'trigger' => 'Das Passwort des Kontos wurde geändert',
+        'subject' => 'Dein Passwort wurde geändert',
+        'preview' => 'Das Passwort für dein Konto bei {{ site_name }} ist neu.',
+        'description' => 'Geht an die Adresse des Kontos, sobald sein Passwort geändert ist: im Profil, im Control Panel oder über einen Link zum Zurücksetzen. Abschaltbar unter password_change.notify. Platzhalter: user.name, user.email, changed_at.',
+        'body' => '<p>Hallo {{ user.name }},</p>'
+            .'<p>das Passwort für dein Konto bei {{ site_name }} wurde am {{ changed_at }} geändert.</p>'
+            .'<p>Warst du das nicht, setze dein Passwort über „Passwort vergessen“ sofort zurück und antworte auf diese Mail.</p>',
     ],
     'deletion_scheduled' => [
         'title' => 'Konten: Löschung vorgemerkt',

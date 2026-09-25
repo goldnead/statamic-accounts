@@ -70,6 +70,18 @@ class EmailChange
             'expires_in_hours' => (int) round((int) config('accounts.email_change.expire_minutes', 1440) / 60),
         ]);
 
+        // And the current address hears of it now, not only once the change
+        // is done: whoever took over an open session could otherwise move the
+        // account to their own address without the owner ever being told
+        // before it happened.
+        if (config('accounts.email_change.notify_old_address', true)) {
+            $this->mailer->send('email_change_requested', (string) $user->email(), [
+                'user' => ['name' => $user->name(), 'email' => $user->email()],
+                'new_email' => $newEmail,
+                'old_email' => $user->email(),
+            ]);
+        }
+
         EmailChangeRequested::dispatch((string) $user->id(), (string) $user->email(), $user->name(), $newEmail);
 
         return $request;

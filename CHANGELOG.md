@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.2.0 — 2026-09-25
+
+Findings from the ChoirLive end-to-end check.
+
+### Added
+
+- **"Your password was changed"** (`password_changed`, slug `accounts-password-changed`, in the
+  email-templates registry, editable in the CP). Sent to the account's address after any change
+  of the password: Statamic's profile form (which fires no event of its own), the Control Panel,
+  a reset link, the host's own code. Watched at `UserSaving`/`UserSaved` (Eloquent: the model's
+  dirty state; file users: the hash stored on disk). New accounts are not told. New config key
+  `password_change.notify` (default `true`), also on the settings screen.
+- Event `PasswordChanged` (`accounts.password.changed`): a trigger in automations and
+  webhook-manager and a row on the Wiring screen. Payload `user_id`, `email`, `name`, never the
+  password. Ledger entry `accounts.password_changed`.
+- **Change of address, told before it happens:** `email_change_requested`
+  (slug `accounts-email-change-requested`) goes to the current address as soon as a new one is
+  entered. Until now the old address heard of it only after the new one was confirmed, which is
+  too late when a taken-over session moves the account. Same switch as before,
+  `email_change.notify_old_address`.
+
+### Checked
+
+- The notice after confirmation (`email_changed`) was sent all along, for file and Eloquent users
+  (new test `the_old_address_hears_of_the_change_with_eloquent_users`).
+
+### Upgrading
+
+- No migration. Two new template slugs; sites that import templates run
+  `php please email-templates:import` again to get them as editable entries.
+
 ## 0.1.1 — 2026-09-25
 
 - `export.throttle` is applied: the customer's download is limited per person

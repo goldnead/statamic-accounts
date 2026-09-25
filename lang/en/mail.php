@@ -23,6 +23,7 @@ return [
         'grace_days' => 'Grace period in days',
         'reasons_list' => 'What stands in the way (ready-made list)',
         'link_days' => 'Link lifetime in days',
+        'changed_at' => 'When it was changed',
     ],
     'verify_email' => [
         'title' => 'Accounts: Confirm email address',
@@ -55,6 +56,26 @@ return [
         'body' => '<p>Hi {{ user.name }},</p>'
             .'<p>your account at {{ site_name }} now uses {{ new_email }}. {{ old_email }} will no longer receive account mail.</p>'
             .'<p>If this was not you, reply to this mail right away.</p>',
+    ],
+    'email_change_requested' => [
+        'title' => 'Accounts: Change of address requested, notice to the current address',
+        'trigger' => 'New address entered, sent to the current address',
+        'subject' => 'A new email address was entered for your account',
+        'preview' => 'It only applies once the link sent to {{ new_email }} is opened.',
+        'description' => 'Sent to the current address as soon as a new one is entered, before it is confirmed. Placeholders: user.name, new_email, old_email.',
+        'body' => '<p>Hi {{ user.name }},</p>'
+            .'<p>{{ new_email }} was entered as the new address of your account at {{ site_name }}. It only applies once somebody opens the link sent there. Until then {{ old_email }} stays your address.</p>'
+            .'<p>If this was not you, sign in, change your password and withdraw the change in your account, or reply to this mail.</p>',
+    ],
+    'password_changed' => [
+        'title' => 'Accounts: Password changed',
+        'trigger' => 'The account\'s password was changed',
+        'subject' => 'Your password was changed',
+        'preview' => 'The password of your account at {{ site_name }} is new.',
+        'description' => 'Sent to the account\'s address once its password is changed: in the profile, in the Control Panel or through a reset link. Switched off with password_change.notify. Placeholders: user.name, user.email, changed_at.',
+        'body' => '<p>Hi {{ user.name }},</p>'
+            .'<p>the password of your account at {{ site_name }} was changed on {{ changed_at }}.</p>'
+            .'<p>If this was not you, reset your password through "Forgot password" right away and reply to this mail.</p>',
     ],
     'deletion_scheduled' => [
         'title' => 'Accounts: Deletion scheduled',

@@ -29,6 +29,8 @@ class RegistersTemplates
         'verify_email' => ['action_url' => 'https://example.com/!/statamic-accounts/verify/…', 'expires_in_hours' => 24],
         'confirm_email_change' => ['action_url' => 'https://example.com/!/statamic-accounts/email/confirm/…', 'new_email' => 'maria.neu@example.com', 'old_email' => 'maria.beispiel@example.com', 'expires_in_hours' => 24],
         'email_changed' => ['new_email' => 'maria.neu@example.com', 'old_email' => 'maria.beispiel@example.com'],
+        'email_change_requested' => ['new_email' => 'maria.neu@example.com', 'old_email' => 'maria.beispiel@example.com'],
+        'password_changed' => ['changed_at' => '25. September 2026 21:07'],
         'deletion_scheduled' => ['action_url' => 'https://example.com/!/statamic-accounts/deletion/cancel/…', 'scheduled_for' => '9. Oktober 2026', 'grace_days' => 14],
         'deletion_blocked' => ['action_url' => 'https://example.com/!/statamic-accounts/deletion/cancel/…', 'reasons_list' => '<ul><li>Dein Abo „Chor-Abo“ läuft noch.</li></ul>', 'link_days' => 30],
         'account_deleted' => [],

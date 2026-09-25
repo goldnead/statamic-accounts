@@ -189,7 +189,17 @@ writes the defaults. A slug without an entry, or a site without that addon,
 sends the default text shipped in `lang/{de,en}/mail.php`. Placeholders:
 `{{ user.name }}`, `{{ user.email }}`, `{{ action_url }}`, `{{ new_email }}`,
 `{{ old_email }}`, `{{ scheduled_for }}`, `{{ grace_days }}`, `{{ expires_in_hours }}`,
-`{{ site_name }}`. Mails are sent, not queued.
+`{{ site_name }}`, `{{ changed_at }}`. Mails are sent, not queued.
+
+Two security notices go out without anybody asking for them:
+
+- **Change of address:** the current address is told when a new one is entered
+  (`accounts-email-change-requested`, before the new one counts) and again once it is
+  confirmed (`accounts-email-changed`). `email_change.notify_old_address` switches both.
+- **Password changed** (`accounts-password-changed`, event `accounts.password.changed`):
+  watched at the user's save, so the Statamic profile form, the Control Panel, a reset link
+  and the host's own code all announce it. A new account is not told. Off with
+  `password_change.notify`.
 
 ## Deleting: what goes, what stays
 
@@ -331,7 +341,8 @@ who really acted.
 | `verification.notice_url` | `/` | Where the middleware sends unconfirmed users |
 | `verification.redirect` | `/` | Where the link lands |
 | `email_change.expire_minutes` | `1440` | |
-| `email_change.notify_old_address` | `true` | |
+| `email_change.notify_old_address` | `true` | Tell the current address when a new one is entered, and again once it is confirmed |
+| `password_change.notify` | `true` | "Your password was changed" to the account's address, however it was changed |
 | `email_change.redirect` | `/` | |
 | `deletion.grace_days` | `14` | At least 1 |
 | `deletion.active_subscriptions` | `block` | `block` or `cancel`, see above |

@@ -11,6 +11,7 @@ use Goldnead\Accounts\Events\EmailChanged;
 use Goldnead\Accounts\Events\EmailChangeRequested;
 use Goldnead\Accounts\Events\EmailVerificationSent;
 use Goldnead\Accounts\Events\EmailVerified;
+use Goldnead\Accounts\Events\PasswordChanged;
 use Goldnead\Accounts\Events\PersonalDataExported;
 
 /**
@@ -35,6 +36,7 @@ class EventCatalog
         EmailVerified::class => null,
         EmailChangeRequested::class => 'confirm_email_change',
         EmailChanged::class => 'email_changed',
+        PasswordChanged::class => 'password_changed',
         AccountDeletionRequested::class => 'deletion_scheduled',
         AccountDeletionCancelled::class => null,
         AccountDeletionBlocked::class => 'deletion_blocked',

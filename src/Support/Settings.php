@@ -54,6 +54,7 @@ class Settings implements ProvidesSettings
                     static::field('verification.notice_url', 'string'),
                     static::field('email_change.expire_minutes', 'integer', ['min' => 5]),
                     static::field('email_change.notify_old_address', 'boolean'),
+                    static::field('password_change.notify', 'boolean'),
                 ],
             ],
             [

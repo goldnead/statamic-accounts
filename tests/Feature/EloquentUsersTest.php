@@ -82,6 +82,44 @@ class EloquentUsersTest extends TestCase
     }
 
     #[Test]
+    public function the_old_address_hears_of_the_change_with_eloquent_users(): void
+    {
+        Mail::fake();
+        $user = $this->eloquentUser();
+
+        $request = Accounts::emailChange()->request($user, 'neu@example.com');
+
+        // Before the link: the old address is warned that a change was asked
+        // for, so an account taken over in an open session does not move
+        // silently.
+        Mail::assertSent(AccountMail::class, fn (AccountMail $m) => $m->hasTo('sina@example.com') && $m->templateKey === 'email_change_requested');
+
+        $this->get(Accounts::emailChange()->url($request))->assertSessionHas('accounts.status.kind', 'success');
+
+        Mail::assertSent(AccountMail::class, fn (AccountMail $m) => $m->hasTo('sina@example.com') && $m->templateKey === 'email_changed');
+    }
+
+    #[Test]
+    public function a_changed_password_is_announced_with_eloquent_users(): void
+    {
+        $user = $this->eloquentUser();
+        Mail::fake();
+
+        $fresh = User::find($user->id());
+        $fresh->password('ein-ganz-neues-9');
+        $fresh->save();
+
+        Mail::assertSent(AccountMail::class, fn (AccountMail $m) => $m->hasTo('sina@example.com') && $m->templateKey === 'password_changed');
+
+        Mail::fake();
+        $fresh = User::find($user->id());
+        $fresh->set('name', 'Sina Umbenannt');
+        $fresh->save();
+
+        Mail::assertNotSent(AccountMail::class, fn (AccountMail $m) => $m->templateKey === 'password_changed');
+    }
+
+    #[Test]
     public function the_address_change_and_the_deletion_work_on_integer_ids(): void
     {
         Mail::fake();
