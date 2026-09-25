@@ -3,7 +3,7 @@
 namespace Goldnead\Accounts\Actions;
 
 use Statamic\Actions\Action;
-use Statamic\Contracts\Auth\User as UserContract;
+use Statamic\Auth\User as UserContract;
 
 /**
  * "Customer overview" in the row menu of core's Users listing, so the

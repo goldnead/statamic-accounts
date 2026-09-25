@@ -9,10 +9,10 @@ use Goldnead\Accounts\Events\AccountDeletionRequested;
 use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\Models\AccountRequest;
 use Goldnead\Accounts\Support\AccountMailer;
+use Goldnead\Accounts\Support\Users;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
-use Statamic\Contracts\Auth\User;
-use Statamic\Facades\User as Users;
+use Statamic\Auth\User;
 use Throwable;
 
 /**

@@ -16,6 +16,7 @@
 /resources/js       export-ignore
 /resources/css      export-ignore
 /phpstan            export-ignore
+/phpstan-bootstrap.php export-ignore
 /screenshots        export-ignore
 /art                export-ignore
 

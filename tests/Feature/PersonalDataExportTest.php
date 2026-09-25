@@ -8,6 +8,7 @@ use Goldnead\Accounts\Facades\Accounts;
 use Goldnead\Accounts\Tests\Concerns\SeedsSiblingTables;
 use Goldnead\Accounts\Tests\TestCase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Statamic\Contracts\Auth\User;
@@ -116,7 +117,7 @@ class PersonalDataExportTest extends TestCase
     public function an_addon_that_is_not_installed_is_left_out(): void
     {
         $user = $this->makeUser();
-        \Illuminate\Support\Facades\Schema::drop('notification_items');
+        Schema::drop('notification_items');
 
         $keys = array_keys(Accounts::export()->collect($user)['sections']);
 

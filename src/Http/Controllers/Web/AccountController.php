@@ -7,14 +7,14 @@ use Goldnead\Accounts\Services\AccountDeletion;
 use Goldnead\Accounts\Services\EmailChange;
 use Goldnead\Accounts\Services\EmailVerification;
 use Goldnead\Accounts\Services\PersonalDataExport;
+use Goldnead\Accounts\Support\Users as User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\MessageBag;
-use Statamic\Contracts\Auth\User as UserContract;
-use Statamic\Facades\User;
+use Statamic\Auth\User as UserContract;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**

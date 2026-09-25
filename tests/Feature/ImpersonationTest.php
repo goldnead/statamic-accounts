@@ -8,6 +8,7 @@ use Goldnead\Activity\Facades\Activity;
 use Goldnead\IdentityContracts\Facades\IdentityContext;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Test;
+use Statamic\Events\ImpersonationStarted;
 use Statamic\Facades\User;
 
 class ImpersonationTest extends TestCase
@@ -108,7 +109,7 @@ class ImpersonationTest extends TestCase
         $customer = $this->makeUser();
         $admin = $this->cpUser('admin@example.com', ['impersonate']);
 
-        \Statamic\Events\ImpersonationStarted::dispatch($admin, $customer);
+        ImpersonationStarted::dispatch($admin, $customer);
 
         $this->assertNotNull(collect(Activity::$recorded)->firstWhere('type', 'accounts.impersonation_started'));
     }

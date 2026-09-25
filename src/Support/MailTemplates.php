@@ -2,6 +2,7 @@
 
 namespace Goldnead\Accounts\Support;
 
+use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -111,7 +112,7 @@ class MailTemplates
 
         return [
             'subject' => $this->interpolate($default['subject'], $variables, escape: false),
-            'html' => view('accounts::mail.layout', [
+            'html' => app(ViewFactory::class)->make('accounts::mail.layout', [
                 'title' => $this->interpolate($default['subject'], $variables, escape: false),
                 'preview' => $this->interpolate($default['preview'], $variables, escape: false),
                 'body' => $body,

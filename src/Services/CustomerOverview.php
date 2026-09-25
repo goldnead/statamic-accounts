@@ -9,7 +9,7 @@ use Goldnead\Accounts\PersonalData\Contributors\TeamsContributor;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Statamic\Contracts\Auth\User;
+use Statamic\Auth\User;
 use Throwable;
 
 /**

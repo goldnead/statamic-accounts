@@ -6,7 +6,7 @@ use Goldnead\Accounts\Contracts\ContributesPersonalData;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Statamic\Contracts\Auth\User;
+use Statamic\Auth\User;
 use Throwable;
 
 /**

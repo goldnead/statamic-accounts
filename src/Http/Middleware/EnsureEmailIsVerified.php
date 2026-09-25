@@ -4,8 +4,8 @@ namespace Goldnead\Accounts\Http\Middleware;
 
 use Closure;
 use Goldnead\Accounts\Services\EmailVerification;
+use Goldnead\Accounts\Support\Users as User;
 use Illuminate\Http\Request;
-use Statamic\Facades\User;
 use Symfony\Component\HttpFoundation\Response;
 
 /**

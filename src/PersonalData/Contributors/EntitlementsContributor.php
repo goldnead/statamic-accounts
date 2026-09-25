@@ -4,7 +4,7 @@ namespace Goldnead\Accounts\PersonalData\Contributors;
 
 use Goldnead\Accounts\Support\Subjects;
 use Illuminate\Database\Query\Builder;
-use Statamic\Contracts\Auth\User;
+use Statamic\Auth\User;
 
 /**
  * goldnead/statamic-entitlements: every grant held by the user, whether it

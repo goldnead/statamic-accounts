@@ -2,6 +2,7 @@
 
 namespace Goldnead\Accounts;
 
+use Goldnead\Accounts\Contracts\ContributesPersonalData;
 use Goldnead\Accounts\Http\Middleware\AttributeImpersonation;
 use Goldnead\Accounts\Http\Middleware\EnsureEmailIsVerified;
 use Goldnead\Accounts\Integrations\ActivityBridge;
@@ -57,7 +58,7 @@ class ServiceProvider extends AddonServiceProvider
      * The contributors shipped with the addon. Each checks for itself whether
      * its sibling is installed.
      *
-     * @var list<class-string<\Goldnead\Accounts\Contracts\ContributesPersonalData>>
+     * @var list<class-string<ContributesPersonalData>>
      */
     public const CONTRIBUTORS = [
         AccountContributor::class,

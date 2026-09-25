@@ -6,10 +6,10 @@ use Goldnead\Accounts\Events\EmailVerificationSent;
 use Goldnead\Accounts\Events\EmailVerified;
 use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\Support\AccountMailer;
+use Goldnead\Accounts\Support\Users;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
-use Statamic\Contracts\Auth\User;
-use Statamic\Facades\User as Users;
+use Statamic\Auth\User;
 
 /**
  * Confirming that an account's address belongs to the person using it.

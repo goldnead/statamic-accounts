@@ -2,7 +2,7 @@
 
 namespace Goldnead\Accounts\Contracts;
 
-use Statamic\Contracts\Auth\User;
+use Statamic\Auth\User;
 
 /**
  * One addon's share of a customer's personal data export.

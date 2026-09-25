@@ -3,7 +3,7 @@
 namespace Goldnead\Accounts\PersonalData\Contributors;
 
 use Illuminate\Support\Facades\DB;
-use Statamic\Contracts\Auth\User;
+use Statamic\Auth\User;
 
 /**
  * goldnead/statamic-teams: the teams the user belongs to, with role and date.

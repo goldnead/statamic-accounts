@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Test;
 use Statamic\Events\UserRegistered;
+use Statamic\Facades\Antlers;
 use Statamic\Facades\User;
 
 class EmailVerificationTest extends TestCase
@@ -133,7 +134,7 @@ class EmailVerificationTest extends TestCase
         $user = $this->makeUser();
         $this->actingAs($user);
 
-        $html = (string) \Statamic\Facades\Antlers::parse('{{ accounts:verify_notice }}Bitte bestätige {{ email }}{{ /accounts:verify_notice }}', [], true);
+        $html = (string) Antlers::parse('{{ accounts:verify_notice }}Bitte bestätige {{ email }}{{ /accounts:verify_notice }}', [], true);
 
         $this->assertStringContainsString('Bitte bestätige sina@example.com', $html);
         $this->assertStringContainsString('action="'.route('statamic.accounts.verification.resend').'"', $html);
@@ -141,6 +142,6 @@ class EmailVerificationTest extends TestCase
 
         Accounts::verification()->markVerified($user);
 
-        $this->assertSame('', trim((string) \Statamic\Facades\Antlers::parse('{{ accounts:verify_notice }}x{{ /accounts:verify_notice }}', [], true)));
+        $this->assertSame('', trim((string) Antlers::parse('{{ accounts:verify_notice }}x{{ /accounts:verify_notice }}', [], true)));
     }
 }

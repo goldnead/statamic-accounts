@@ -4,7 +4,7 @@ namespace Goldnead\Accounts\PersonalData\Contributors;
 
 use Goldnead\Accounts\Contracts\ContributesPersonalData;
 use Goldnead\Accounts\Models\AccountRequest;
-use Statamic\Contracts\Auth\User;
+use Statamic\Auth\User;
 
 /**
  * The account itself: the user record without its secrets, plus the open

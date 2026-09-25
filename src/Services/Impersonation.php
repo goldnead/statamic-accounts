@@ -4,7 +4,7 @@ namespace Goldnead\Accounts\Services;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Statamic\Actions\Impersonate;
-use Statamic\Contracts\Auth\User;
+use Statamic\Auth\User;
 
 /**
  * Signing in as a customer from the Control Panel.

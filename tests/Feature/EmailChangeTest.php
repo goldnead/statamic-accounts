@@ -11,6 +11,7 @@ use Goldnead\Accounts\Tests\TestCase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Test;
+use Statamic\Facades\Antlers;
 use Statamic\Facades\User;
 
 class EmailChangeTest extends TestCase
@@ -126,7 +127,7 @@ class EmailChangeTest extends TestCase
         $this->actingAs($user);
         Accounts::emailChange()->request($user, 'neu@example.com');
 
-        $html = (string) \Statamic\Facades\Antlers::parse('{{ accounts:change_email_form redirect="/konto" }}{{ if pending_email }}Wartet: {{ pending_email }}{{ /if }}{{ /accounts:change_email_form }}', [], true);
+        $html = (string) Antlers::parse('{{ accounts:change_email_form redirect="/konto" }}{{ if pending_email }}Wartet: {{ pending_email }}{{ /if }}{{ /accounts:change_email_form }}', [], true);
 
         $this->assertStringContainsString('Wartet: neu@example.com', $html);
         $this->assertStringContainsString('action="'.route('statamic.accounts.email.change').'"', $html);

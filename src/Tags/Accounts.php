@@ -6,9 +6,10 @@ use Goldnead\Accounts\Services\AccountDeletion;
 use Goldnead\Accounts\Services\EmailChange;
 use Goldnead\Accounts\Services\EmailVerification;
 use Goldnead\Accounts\Services\Impersonation;
+use Goldnead\Accounts\Support\Users as User;
+use Illuminate\Contracts\Support\MessageBag as MessageBagContract;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
-use Statamic\Facades\User;
 use Statamic\Tags\Concerns\RendersForms;
 use Statamic\Tags\Tags;
 
@@ -194,7 +195,7 @@ class Accounts extends Tags
         return $html;
     }
 
-    protected function errorBag(string $name): MessageBag
+    protected function errorBag(string $name): MessageBagContract
     {
         $errors = session('errors');
 

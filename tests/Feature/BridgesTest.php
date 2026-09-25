@@ -6,9 +6,11 @@ use Goldnead\Accounts\Events\EmailVerified;
 use Goldnead\Accounts\Facades\Accounts;
 use Goldnead\Accounts\Integrations\Automations\AutomationsBridge;
 use Goldnead\Accounts\Integrations\WebhookManager\WebhookManagerBridge;
+use Goldnead\Accounts\Mail\AccountMail;
 use Goldnead\Accounts\Support\EventCatalog;
 use Goldnead\Accounts\Tests\TestCase;
 use Goldnead\Activity\Facades\Activity;
+use Goldnead\EmailTemplates\Facades\EmailTemplates;
 use Goldnead\StatamicAutomations\Facades\Automations;
 use Goldnead\WebhookManager\Facades\WebhookManager;
 use Illuminate\Support\Facades\Mail;
@@ -108,7 +110,7 @@ class BridgesTest extends TestCase
     {
         Mail::fake();
 
-        \Goldnead\EmailTemplates\Facades\EmailTemplates::$templates['accounts-verify-email'] = (object) [
+        EmailTemplates::$templates['accounts-verify-email'] = (object) [
             'subject' => 'Willkommen {{ user.name }}',
             'body' => '<p>Eigener Text: <a href="{{ action_url }}">hier</a> für {{ user.email }}</p>',
             'source' => 'entry',
@@ -117,13 +119,13 @@ class BridgesTest extends TestCase
         $user = $this->makeUser();
         Accounts::verification()->send($user);
 
-        Mail::assertSent(\Goldnead\Accounts\Mail\AccountMail::class, function ($mail) {
+        Mail::assertSent(AccountMail::class, function ($mail) {
             return $mail->subject === 'Willkommen Sina Sänger'
                 && str_contains($mail->htmlBody, 'Eigener Text')
                 && str_contains($mail->htmlBody, 'für sina@example.com')
                 && str_contains($mail->htmlBody, '&signature=');
         });
 
-        \Goldnead\EmailTemplates\Facades\EmailTemplates::$templates = [];
+        EmailTemplates::$templates = [];
     }
 }

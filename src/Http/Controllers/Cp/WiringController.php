@@ -19,6 +19,7 @@ class WiringController extends CpController
 
         return Inertia::render('accounts::Wiring', array_merge($wiring->toArray(), [
             'indexUrl' => cp_route('accounts.index'),
+            't' => trans('accounts::cp'),
         ]));
     }
 }

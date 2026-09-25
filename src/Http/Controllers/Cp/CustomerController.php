@@ -2,17 +2,22 @@
 
 namespace Goldnead\Accounts\Http\Controllers\Cp;
 
+use Goldnead\Accounts\Models\AccountRequest;
 use Goldnead\Accounts\Services\AccountDeletion;
 use Goldnead\Accounts\Services\CustomerOverview;
 use Goldnead\Accounts\Services\EmailVerification;
 use Goldnead\Accounts\Services\Impersonation;
 use Goldnead\Accounts\Services\PersonalDataExport;
 use Goldnead\Accounts\Support\Schema as AccountsSchema;
+use Goldnead\Accounts\Support\Users;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
-use Statamic\Contracts\Auth\User as UserContract;
+use Statamic\Auth\User as UserContract;
 use Statamic\CP\Column;
 use Statamic\Facades\CP\Toast;
 use Statamic\Facades\User;
@@ -39,9 +44,15 @@ class CustomerController extends CpController
     {
         $this->authorize('view accounts');
 
-        $pendingDeletions = AccountsSchema::ready()
-            ? \Goldnead\Accounts\Models\AccountRequest::query()
-                ->ofType(\Goldnead\Accounts\Models\AccountRequest::TYPE_DELETION)
+        $ready = Schema::hasTable('account_requests');
+
+        if (! $ready) {
+            Log::warning('statamic-accounts: the account_requests table is missing; run php artisan migrate.');
+        }
+
+        $pendingDeletions = $ready
+            ? AccountRequest::query()
+                ->ofType(AccountRequest::TYPE_DELETION)
                 ->pending()
                 ->pluck('due_at', 'user_id')
             : collect();
@@ -53,7 +64,7 @@ class CustomerController extends CpController
             'email' => (string) $user->email(),
             'name' => $user->name(),
             'verified' => $verification->isVerified($user),
-            'deletion_due' => ($due = $pendingDeletions->get((string) $user->id())) ? \Illuminate\Support\Carbon::parse($due)->isoFormat('L') : null,
+            'deletion_due' => ($due = $pendingDeletions->get((string) $user->id())) ? Carbon::parse($due)->isoFormat('L') : null,
             'url' => cp_route('accounts.customers.show', (string) $user->id()),
         ])->values()->all();
 
@@ -67,7 +78,8 @@ class CustomerController extends CpController
             ],
             'wiringUrl' => cp_route('accounts.wiring'),
             'total' => User::query()->count(),
-            'setupRequired' => ! AccountsSchema::ready(),
+            'setupRequired' => ! $ready,
+            't' => trans('accounts::cp'),
         ]);
     }
 
@@ -76,7 +88,7 @@ class CustomerController extends CpController
         $this->authorize('view accounts');
 
         $customer = $this->find($user);
-        $me = User::current();
+        $me = Users::current();
 
         return Inertia::render('accounts::Customers/Show', [
             'overview' => AccountsSchema::ready() ? $overview->for($customer) : ['account' => $this->bare($customer)],
@@ -97,6 +109,7 @@ class CustomerController extends CpController
                 'edit' => $me?->can('edit', $customer) ?? false,
             ],
             'graceDays' => (int) config('accounts.deletion.grace_days', 14),
+            't' => trans('accounts::cp'),
         ]);
     }
 
@@ -105,7 +118,7 @@ class CustomerController extends CpController
         $this->authorize('export account data');
         abort_unless(config('accounts.export.enabled', true), 404);
 
-        $file = $export->build($this->find($user), 'admin', User::current());
+        $file = $export->build($this->find($user), 'admin', Users::current());
 
         return response()->download($file['path'], $file['filename'], ['Content-Type' => $file['mime']])
             ->deleteFileAfterSend();
@@ -129,7 +142,7 @@ class CustomerController extends CpController
         $customer = $this->find($user);
 
         if (! $verification->isVerified($customer)) {
-            $verification->markVerified($customer, User::current());
+            $verification->markVerified($customer, Users::current());
         }
 
         Toast::success(__('accounts::messages.email_verified'));
@@ -141,7 +154,7 @@ class CustomerController extends CpController
     {
         $this->authorize('manage accounts');
 
-        $deletion->request($this->find($user), User::current());
+        $deletion->request($this->find($user), Users::current());
         Toast::success(__('accounts::messages.deletion_scheduled'));
 
         return back();
@@ -151,7 +164,7 @@ class CustomerController extends CpController
     {
         $this->authorize('manage accounts');
 
-        $deletion->cancel($this->find($user), User::current());
+        $deletion->cancel($this->find($user), Users::current());
         Toast::success(__('accounts::messages.deletion_cancelled'));
 
         return back();
@@ -164,7 +177,7 @@ class CustomerController extends CpController
     public function impersonate(Impersonation $impersonation, string $user): \Symfony\Component\HttpFoundation\Response
     {
         $customer = $this->find($user);
-        $me = User::current();
+        $me = Users::current();
 
         abort_unless($me !== null && $impersonation->allowed($me, $customer), 403);
 
@@ -175,7 +188,7 @@ class CustomerController extends CpController
 
     protected function find(string $id): UserContract
     {
-        $user = User::find($id);
+        $user = Users::find($id);
 
         abort_if($user === null, 404);
 

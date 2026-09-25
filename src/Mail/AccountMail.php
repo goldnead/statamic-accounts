@@ -2,12 +2,13 @@
 
 namespace Goldnead\Accounts\Mail;
 
+use Goldnead\Accounts\Support\MailTemplates;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 
 /**
  * Every account mail: subject and HTML already rendered by
- * {@see \Goldnead\Accounts\Support\MailTemplates}.
+ * {@see MailTemplates}.
  *
  * Sent, not queued. A confirmation link that sits in a queue on a host
  * without a worker never arrives, and the customer waits for it.

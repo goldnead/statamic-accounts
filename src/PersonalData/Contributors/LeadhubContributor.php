@@ -4,7 +4,7 @@ namespace Goldnead\Accounts\PersonalData\Contributors;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Schema;
-use Statamic\Contracts\Auth\User;
+use Statamic\Auth\User;
 
 /**
  * goldnead/statamic-leadhub: the CRM contact (by normalised address or by the

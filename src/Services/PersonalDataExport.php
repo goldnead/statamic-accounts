@@ -7,7 +7,7 @@ use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\PersonalData\PersonalDataRegistry;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Statamic\Contracts\Auth\User;
+use Statamic\Auth\User;
 use Throwable;
 use ZipArchive;
 

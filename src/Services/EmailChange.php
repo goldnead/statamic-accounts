@@ -8,9 +8,10 @@ use Goldnead\Accounts\Exceptions\AccountException;
 use Goldnead\Accounts\Integrations\ActivityBridge;
 use Goldnead\Accounts\Models\AccountRequest;
 use Goldnead\Accounts\Support\AccountMailer;
+use Goldnead\Accounts\Support\Users;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\URL;
-use Statamic\Contracts\Auth\User;
-use Statamic\Facades\User as Users;
+use Statamic\Auth\User;
 
 /**
  * Moving an account to a new address.
@@ -168,7 +169,7 @@ class EmailChange
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<AccountRequest>
+     * @return Builder<AccountRequest>
      */
     protected function pendingQuery(User $user)
     {
