@@ -29,6 +29,7 @@ return [
     'panel_teams' => 'Teams',
     'panel_activity' => 'Verlauf',
     'not_installed' => ':addon ist nicht installiert.',
+    'show_all_payments' => 'Alle :count Zahlungen zeigen',
     'none_payments' => 'Keine Zahlungen unter dieser Adresse.',
     'none_subscriptions' => 'Keine Abos unter dieser Adresse.',
     'none_entitlements' => 'Keine Zugänge.',

@@ -83,6 +83,8 @@ namespace Goldnead\WebhookManager\Facades {
 }
 
 namespace Goldnead\Activity\Facades {
+    use Goldnead\IdentityContracts\Identity;
+
     if (! class_exists(Activity::class)) {
         class Activity
         {
@@ -92,6 +94,13 @@ namespace Goldnead\Activity\Facades {
             /** @param  array<string, mixed>  $attributes */
             public static function record(string $eventType, array $attributes = []): ?object
             {
+                // The real ledger types `actor` as ?Identity (ActivityData.php)
+                // and refuses a user object. Same here, or a test passes on
+                // what production swallows as a warning.
+                if (isset($attributes['actor']) && ! $attributes['actor'] instanceof Identity) {
+                    throw new \TypeError('actor must be an Identity, '.get_debug_type($attributes['actor']).' given');
+                }
+
                 self::$recorded[] = ['type' => $eventType, 'attributes' => $attributes];
 
                 return null;

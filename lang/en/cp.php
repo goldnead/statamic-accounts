@@ -29,6 +29,7 @@ return [
     'panel_teams' => 'Teams',
     'panel_activity' => 'History',
     'not_installed' => ':addon is not installed.',
+    'show_all_payments' => 'Show all :count payments',
     'none_payments' => 'No payments under this address.',
     'none_subscriptions' => 'No subscriptions under this address.',
     'none_entitlements' => 'No access grants.',

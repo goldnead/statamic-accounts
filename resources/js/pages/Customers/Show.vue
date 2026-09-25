@@ -39,12 +39,22 @@ function scheduleDeletion() {
     post(props.urls.deletion);
 }
 
+// What the person has now first (abos, access, teams), the payment history
+// last: it is the longest list and would push everything else off screen.
 const sections = computed(() => [
-    { key: 'payments', heading: props.t.panel_payments, addon: 'Payments', empty: props.t.none_payments },
     { key: 'subscriptions', heading: props.t.panel_subscriptions, addon: 'Payments', empty: props.t.none_subscriptions },
     { key: 'entitlements', heading: props.t.panel_entitlements, addon: 'Entitlements', empty: props.t.none_entitlements },
     { key: 'teams', heading: props.t.panel_teams, addon: 'Teams', empty: props.t.none_teams },
+    { key: 'payments', heading: props.t.panel_payments, addon: 'Payments', empty: props.t.none_payments },
 ]);
+
+const PAYMENTS_SHOWN = 10;
+const paymentsExpanded = ref(false);
+const paymentRows = computed(() => {
+    const rows = section('payments').rows;
+
+    return paymentsExpanded.value ? rows : rows.slice(0, PAYMENTS_SHOWN);
+});
 
 function section(key) {
     return props.overview[key] ?? { installed: false, rows: [] };
@@ -106,7 +116,7 @@ const statusColor = (status) => ({
                                 <TableColumn>{{ t.status }}</TableColumn>
                             </TableColumns>
                             <TableRows>
-                                <TableRow v-for="row in section('payments').rows" :key="row.id">
+                                <TableRow v-for="row in paymentRows" :key="row.id">
                                     <TableCell class="tabular-nums whitespace-nowrap">{{ row.date }}</TableCell>
                                     <TableCell>{{ row.product }}</TableCell>
                                     <TableCell class="text-right tabular-nums whitespace-nowrap">{{ row.amount }}</TableCell>
@@ -170,6 +180,13 @@ const statusColor = (status) => ({
                                 </TableRow>
                             </TableRows>
                         </Table>
+
+                        <div
+                            v-if="s.key === 'payments' && section('payments').rows.length > PAYMENTS_SHOWN && !paymentsExpanded"
+                            class="pt-3 text-center"
+                        >
+                            <Button size="sm" variant="ghost" :text="replace(t.show_all_payments, { count: section('payments').rows.length })" @click="paymentsExpanded = true" />
+                        </div>
                     </Card>
                 </Panel>
             </div>

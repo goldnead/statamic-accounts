@@ -17,6 +17,8 @@ class ActivityBridge
 {
     public const FACADE = '\Goldnead\Activity\Facades\Activity';
 
+    public const IDENTITY = '\Goldnead\IdentityContracts\Facades\IdentityContext';
+
     public function available(): bool
     {
         return (bool) config('accounts.integrations.activity', true)
@@ -38,7 +40,7 @@ class ActivityBridge
             $facade = self::FACADE;
 
             $attributes = array_filter([
-                'actor' => $actor,
+                'actor' => $this->identity($actor),
                 'dedupe_key' => $dedupeKey,
                 'properties' => $properties,
             ], fn ($value) => $value !== null);
@@ -50,5 +52,22 @@ class ActivityBridge
                 'exception' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * The ledger takes an `Identity`, not a user: its `ActivityData` is typed
+     * that way. A user is turned into one through identity-contracts (which
+     * the ledger requires, so it is there whenever the ledger is). Without an
+     * actor the ledger fills in the current one itself.
+     */
+    protected function identity(mixed $actor): mixed
+    {
+        if ($actor === null || ! class_exists(self::IDENTITY)) {
+            return null;
+        }
+
+        $facade = self::IDENTITY;
+
+        return $facade::resolve($actor);
     }
 }

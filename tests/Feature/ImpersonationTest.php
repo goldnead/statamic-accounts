@@ -65,7 +65,8 @@ class ImpersonationTest extends TestCase
         $this->assertNotNull($entry, 'Every impersonation is on record.');
         $this->assertSame((string) $admin->id(), $entry['attributes']['properties']['impersonator_id']);
         $this->assertSame((string) $customer->id(), $entry['attributes']['properties']['user_id']);
-        $this->assertSame($admin->id(), $entry['attributes']['actor']->id());
+        // The admin is the actor, as an Identity: the ledger takes nothing else.
+        $this->assertSame((string) $admin->id(), $entry['attributes']['actor']->userId ?? $entry['attributes']['actor']->id);
     }
 
     #[Test]
