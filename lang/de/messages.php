@@ -40,6 +40,7 @@ return [
     'impersonate_denied' => 'Du darfst dich nicht als diese Person anmelden.',
     'impersonation_locked' => 'Während eines Identitätswechsels lassen sich Adresse, Löschung und Datenexport nicht ändern. Das entscheidet die Person selbst.',
 
+    'subscriptions_stay_cancelled' => '{1} Dein Abo wurde für die Löschung bereits gekündigt und bleibt gekündigt.|[2,*] Deine :count Abos wurden für die Löschung bereits gekündigt und bleiben gekündigt.',
     'elevation_unavailable' => 'Diese Aktion braucht eine Bestätigung, aber die Bestätigungsseite ist nicht eingerichtet. Bitte melde dich beim Betreiber.',
     'section_invoices' => 'Rechnungen',
     'section_activity' => 'Protokoll',

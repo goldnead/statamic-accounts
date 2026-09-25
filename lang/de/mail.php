@@ -22,6 +22,7 @@ return [
         'scheduled_for' => 'Datum der Löschung',
         'grace_days' => 'Frist in Tagen',
         'reasons_list' => 'Was der Löschung im Weg steht (fertige Liste)',
+        'link_days' => 'Gültigkeit des Links in Tagen',
     ],
     'verify_email' => [
         'title' => 'Konten: E-Mail-Adresse bestätigen',
@@ -79,7 +80,8 @@ return [
             .'{{ reasons_list }}'
             .'<p>Sobald das erledigt ist, löschen wir dein Konto beim nächsten täglichen Lauf, ohne dass du noch etwas tun musst.</p>'
             .'<p>Wenn du dein Konto doch behalten willst:</p>'
-            .$button('Konto behalten'),
+            .$button('Konto behalten')
+            .'<p>Der Button gilt {{ link_days }} Tage. Danach kannst du den Antrag in deinem Konto zurückziehen.</p>',
     ],
     'account_deleted' => [
         'title' => 'Konten: Konto gelöscht',

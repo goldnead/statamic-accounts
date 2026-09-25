@@ -103,9 +103,18 @@ class AccountController extends Controller
 
         abort_if($this->impersonation->active(), 403, __('accounts::messages.impersonation_locked'));
 
+        $open = $deletion->pending($user);
         $deletion->cancel($user);
 
-        return $this->success($request, 'delete', __('accounts::messages.deletion_cancelled'));
+        $message = __('accounts::messages.deletion_cancelled');
+
+        // A cancellation made under the `cancel` policy before a failed run
+        // is not undone by withdrawing. Say so.
+        if ($open !== null && ($count = $deletion->subscriptionsCancelled($open)) > 0) {
+            $message .= ' '.trans_choice('accounts::messages.subscriptions_stay_cancelled', $count, ['count' => $count]);
+        }
+
+        return $this->success($request, 'delete', $message);
     }
 
     public function export(Request $request, PersonalDataExport $export): Response

@@ -53,6 +53,13 @@ First version.
   rows keep no name. Blockers are phrased in the third person in the Control Panel,
   with the portal URL as a link. A site that turns elevated sessions on without the
   confirmation route gets a 403 instead of a 500.
+- The purge checks that the user is really gone (a `UserDeleting` veto, a user file
+  that could not be removed) and otherwise rolls back: no `completed`, no last mail.
+  A subscription cancelled before a failed run is recorded (request meta, ledger
+  `accounts.subscriptions_cancelled`) and named when the request is withdrawn. The
+  blocked state is saved only after its mail went out; the blocked mail says how long
+  its button works. A request whose account is already gone is logged, not closed
+  silently. The customer list shows since when a deletion is blocked.
 - One confirmation mail: `verification.mail = auto` sends Laravel's `VerifyEmail`
   (`core-verify-email`) for `MustVerifyEmail` models and this addon's mail otherwise;
   Laravel's `Verified` event becomes `EmailVerified`.

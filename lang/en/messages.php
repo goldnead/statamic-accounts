@@ -40,6 +40,7 @@ return [
     'impersonate_denied' => 'You may not sign in as this user.',
     'impersonation_locked' => 'While impersonating, the address, the deletion and the data export cannot be changed. That is the person\'s own decision.',
 
+    'subscriptions_stay_cancelled' => '{1} Your subscription was already cancelled for the deletion and stays cancelled.|[2,*] Your :count subscriptions were already cancelled for the deletion and stay cancelled.',
     'elevation_unavailable' => 'This action needs a confirmation, but the confirmation page is not set up. Please contact the site operator.',
     'section_invoices' => 'Invoices',
     'section_activity' => 'Activity log',

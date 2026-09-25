@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
+use RuntimeException;
 use Statamic\Auth\User;
 use Throwable;
 
@@ -31,11 +32,17 @@ use Throwable;
  *   holds alone with other members): the request becomes `blocked`, the
  *   person gets one mail with the reasons and a withdraw link, and the next
  *   runs try again. Nothing is changed.
- * - Otherwise, in one transaction: running subscriptions are cancelled if
- *   the `cancel` policy says so, every eraser runs, {@see AccountDeleting} is
- *   dispatched (the user still exists), the user is deleted. A failure
- *   anywhere rolls the database back and the account stays scheduled.
- *   {@see AccountDeleted} follows after the commit.
+ * - Otherwise, with the `cancel` policy, running subscriptions are cancelled
+ *   through payments first. That talks to the provider and is **not** part
+ *   of the transaction below: a later rollback cannot undo it. So it is put
+ *   on record (request meta, ledger entry `accounts.subscriptions_cancelled`)
+ *   and said again if the request is withdrawn afterwards.
+ * - Then, in one transaction: every eraser runs, {@see AccountDeleting} is
+ *   dispatched (the user still exists), the user is deleted and checked to
+ *   be gone (a `UserDeleting` veto or a file that could not be removed
+ *   throws). A failure anywhere rolls the database back and the account
+ *   stays scheduled. {@see AccountDeleted} and the last mail follow after
+ *   the commit.
  */
 class AccountDeletion
 {
@@ -223,8 +230,16 @@ class AccountDeletion
         $user = Users::find($request->user_id);
 
         if ($user === null) {
-            // Deleted some other way in the meantime. Nothing left to do.
-            $request->forceFill(['status' => AccountRequest::STATUS_COMPLETED, 'resolved_at' => now(), 'email' => null, 'meta' => null])->save();
+            // Deleted some other way in the meantime (the Control Panel, an
+            // import). The erasers need the user and cannot run: what the
+            // siblings hold stays, and somebody has to know.
+            Log::warning('statamic-accounts: the account of a due deletion was already gone; the addons\' data about it was not erased by this deletion.', [
+                'request' => $request->id,
+            ]);
+
+            $request->forceFill(['status' => AccountRequest::STATUS_COMPLETED, 'resolved_at' => now(), 'email' => null, 'meta' => ['outcome' => 'user_missing']])->save();
+
+            $this->activity->record('accounts.deletion_user_missing', ['request_id' => $request->id], null, 'accounts:deletion_user_missing:'.$request->id);
 
             return false;
         }
@@ -243,13 +258,28 @@ class AccountDeletion
 
         // Only now, with nothing else in the way: the `cancel` policy's
         // cancellation. A subscription that cannot be cancelled blocks.
-        if ($failed = $this->erasure->cancelSubscriptions($user)) {
-            $this->block($request, $user, $failed);
+        $cancellation = $this->erasure->cancelSubscriptions($user);
+
+        if ($cancellation['cancelled'] > 0) {
+            $cancelled = (int) ($request->meta['subscriptions_cancelled'] ?? 0) + $cancellation['cancelled'];
+            $request->forceFill(['meta' => array_merge($request->meta ?? [], ['subscriptions_cancelled' => $cancelled])])->save();
+
+            $this->activity->record('accounts.subscriptions_cancelled', [
+                'request_id' => $request->id,
+                'user_id' => $id,
+                'count' => $cancellation['cancelled'],
+            ], null);
+        }
+
+        if ($cancellation['failed'] !== []) {
+            $this->block($request, $user, $cancellation['failed']);
 
             return false;
         }
 
-        $results = DB::transaction(function () use ($user, $request, $id, $email, $name) {
+        $cancelledTotal = (int) ($request->meta['subscriptions_cancelled'] ?? 0);
+
+        $results = DB::transaction(function () use ($user, $request, $id, $email, $name, $cancelledTotal) {
             $results = $this->erasure->erase($user);
 
             // After a successful erasure, while the user still exists. A
@@ -259,7 +289,13 @@ class AccountDeletion
             // Inside the transaction: an Eloquent user goes with the rest or
             // not at all; a file user is deleted last, so a failure before
             // it leaves the file untouched.
-            $user->delete();
+            // Checked, not assumed: a `UserDeleting` listener can veto
+            // (delete() returns false), and the file repository ignores a
+            // failed unlink. Either way the account is still there, so
+            // nothing may be marked done.
+            if ($user->delete() === false || $this->stillExists($user)) {
+                throw new RuntimeException('The user could not be deleted; the deletion is rolled back.');
+            }
 
             $request->forceFill([
                 'status' => AccountRequest::STATUS_COMPLETED,
@@ -268,7 +304,10 @@ class AccountDeletion
                 // points at nothing now), the dates and what was deleted and
                 // kept. Row counts, never a value from a row.
                 'email' => null,
-                'meta' => ['erasure' => array_map(fn ($result) => $result->toArray(), $results)],
+                'meta' => array_filter([
+                    'erasure' => array_map(fn ($result) => $result->toArray(), $results),
+                    'subscriptions_cancelled' => $cancelledTotal ?: null,
+                ]),
             ])->save();
 
             return $results;
@@ -294,24 +333,51 @@ class AccountDeletion
      *
      * @param  list<string>  $reasons
      */
+    /**
+     * Whether the user is still there after `delete()`: the file for a file
+     * user, the row for an Eloquent one.
+     */
+    protected function stillExists(User $user): bool
+    {
+        if (method_exists($user, 'model')) {
+            $model = $user->model();
+
+            return $model !== null && $model->newQuery()->whereKey($model->getKey())->exists();
+        }
+
+        return method_exists($user, 'path') && is_string($path = $user->path()) && file_exists($path);
+    }
+
+    /**
+     * How many subscriptions a (possibly withdrawn) request already had
+     * cancelled through the `cancel` policy.
+     */
+    public function subscriptionsCancelled(AccountRequest $request): int
+    {
+        return (int) ($request->meta['subscriptions_cancelled'] ?? 0);
+    }
+
     protected function block(AccountRequest $request, User $user, array $reasons): void
     {
         if ($request->isBlocked()) {
             return;
         }
 
-        $request->forceFill([
-            'status' => AccountRequest::STATUS_BLOCKED,
-            'meta' => ['blocked_at' => now()->toIso8601String(), 'reasons' => count($reasons)],
-        ])->save();
-
         $list = '<ul>'.implode('', array_map(fn (string $reason) => '<li>'.e($reason).'</li>', $reasons)).'</ul>';
 
+        // The mail first: `blocked` means "told". If it cannot be sent, the
+        // exception leaves the request pending and the next run tries again.
         $this->mailer->send('deletion_blocked', (string) $user->email(), [
             'user' => ['name' => $user->name(), 'email' => $user->email()],
             'reasons_list' => $list,
             'action_url' => $this->cancelUrl($request, now()->addDays(self::BLOCKED_LINK_DAYS)),
+            'link_days' => self::BLOCKED_LINK_DAYS,
         ]);
+
+        $request->forceFill([
+            'status' => AccountRequest::STATUS_BLOCKED,
+            'meta' => array_merge($request->meta ?? [], ['blocked_at' => now()->toIso8601String(), 'reasons' => count($reasons)]),
+        ])->save();
 
         AccountDeletionBlocked::dispatch((string) $user->id(), (string) $user->email(), $user->name(), count($reasons));
 

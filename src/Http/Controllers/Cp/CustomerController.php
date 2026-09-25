@@ -14,6 +14,7 @@ use Goldnead\Accounts\Support\Users;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
@@ -55,7 +56,7 @@ class CustomerController extends CpController
             ? AccountRequest::query()
                 ->ofType(AccountRequest::TYPE_DELETION)
                 ->open()
-                ->get(['user_id', 'due_at', 'status'])
+                ->get(['user_id', 'due_at', 'status', 'meta'])
                 ->keyBy('user_id')
             : collect();
 
@@ -71,6 +72,8 @@ class CustomerController extends CpController
                 'verified' => $verification->isVerified($user),
                 'deletion_due' => $open?->due_at?->isoFormat('L'),
                 'deletion_blocked' => $open?->status === AccountRequest::STATUS_BLOCKED,
+                // Since when it is blocked, which is not when it was due.
+                'deletion_blocked_since' => isset($open?->meta['blocked_at']) ? Carbon::parse($open->meta['blocked_at'])->isoFormat('L') : null,
                 'url' => cp_route('accounts.customers.show', (string) $user->id()),
             ];
         })->values()->all();

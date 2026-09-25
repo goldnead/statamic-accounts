@@ -107,13 +107,14 @@ class PaymentsContributor extends TableContributor implements ErasesPersonalData
     /**
      * Cancel every running subscription through payments' own service, which
      * tells the provider first and writes what the provider answered. Returns
-     * the subscriptions that could not be cancelled, as blockers.
+     * how many were cancelled and, as blockers, the ones that could not be.
      *
-     * @return list<string>
+     * @return array{cancelled: int, failed: list<string>}
      */
     public function cancelRunning(User $user): array
     {
         $failed = [];
+        $done = 0;
 
         foreach ($this->running($user) as $subscription) {
             if (! class_exists(self::SUBSCRIPTION_MODEL) || ! class_exists(self::SUBSCRIPTIONS_SERVICE)) {
@@ -135,10 +136,12 @@ class PaymentsContributor extends TableContributor implements ErasesPersonalData
 
             if (! $cancelled) {
                 $failed[] = __('accounts::messages.blocker_subscription_cancel_failed', ['product' => $subscription['product']]);
+            } else {
+                $done++;
             }
         }
 
-        return $failed;
+        return ['cancelled' => $done, 'failed' => $failed];
     }
 
     public function erase(User $user): ErasureResult

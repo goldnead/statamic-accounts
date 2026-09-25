@@ -215,7 +215,7 @@ const statusColor = (status) => ({
                             <dd class="flex flex-wrap gap-1">
                                 <Badge v-if="account.verified" color="green" :text="t.verified" pill />
                                 <Badge v-else color="amber" :text="t.unverified" pill />
-                                <Badge v-if="account.deletion_due && account.deletion_state === 'blocked'" color="amber" :text="t.deletion_blocked_badge" :title="replace(t.deletion_blocked_since, { date: account.deletion_due })" pill />
+                                <Badge v-if="account.deletion_due && account.deletion_state === 'blocked'" color="amber" :text="t.deletion_blocked_badge" :title="replace(t.deletion_blocked_since, { date: account.deletion_blocked_since || account.deletion_due })" pill />
                                 <Badge v-else-if="account.deletion_due" color="red" :text="replace(t.deletion_due, { date: account.deletion_due })" pill />
                             </dd>
                             <template v-if="account.verified_at">

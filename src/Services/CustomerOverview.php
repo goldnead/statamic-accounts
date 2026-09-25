@@ -69,6 +69,7 @@ class CustomerOverview
             'deletion_due' => $this->date($deletion?->due_at),
             // `pending` or `blocked` (due, but something stands in the way).
             'deletion_state' => $deletion?->status,
+            'deletion_blocked_since' => $this->date($deletion?->meta['blocked_at'] ?? null),
             // What would stand in the way of deleting now, said to the admin.
             // Changes nothing: with the `cancel` policy nothing is cancelled here.
             'blockers' => $this->blockers($user),

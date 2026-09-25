@@ -59,20 +59,22 @@ class PersonalDataErasure
 
     /**
      * With the `cancel` policy, cancel every running subscription through
-     * payments. Returns what could not be cancelled, as blockers. A no-op
-     * with the `block` policy or without payments.
+     * payments. Returns how many were cancelled and, as blockers, what could
+     * not be. A no-op with the `block` policy or without payments.
      *
-     * @return list<string>
+     * @return array{cancelled: int, failed: list<string>}
      */
     public function cancelSubscriptions(User $user): array
     {
+        $none = ['cancelled' => 0, 'failed' => []];
+
         if ($this->subscriptionPolicy() !== self::POLICY_CANCEL) {
-            return [];
+            return $none;
         }
 
         $payments = $this->registry->available()['payments'] ?? null;
 
-        return $payments instanceof PaymentsContributor ? $payments->cancelRunning($user) : [];
+        return $payments instanceof PaymentsContributor ? $payments->cancelRunning($user) : $none;
     }
 
     /**

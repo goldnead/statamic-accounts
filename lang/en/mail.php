@@ -22,6 +22,7 @@ return [
         'scheduled_for' => 'Date of deletion',
         'grace_days' => 'Grace period in days',
         'reasons_list' => 'What stands in the way (ready-made list)',
+        'link_days' => 'Link lifetime in days',
     ],
     'verify_email' => [
         'title' => 'Accounts: Confirm email address',
@@ -79,7 +80,8 @@ return [
             .'{{ reasons_list }}'
             .'<p>Once that is sorted, we delete your account on the next daily run, without you having to do anything.</p>'
             .'<p>If you would rather keep your account:</p>'
-            .$button('Keep my account'),
+            .$button('Keep my account')
+            .'<p>The button works for {{ link_days }} days. After that you can withdraw the request in your account.</p>',
     ],
     'account_deleted' => [
         'title' => 'Accounts: Account deleted',
