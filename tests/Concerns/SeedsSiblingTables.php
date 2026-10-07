@@ -254,6 +254,149 @@ trait SeedsSiblingTables
             $t->unsignedInteger('slot');
             $t->timestamps();
         });
+
+        Schema::create('certificates_issued', function (Blueprint $t) {
+            $t->id();
+            $t->string('code', 32);
+            $t->string('subject_type', 64);
+            $t->string('subject_id', 64);
+            $t->string('course_id', 64);
+            $t->string('learner_name');
+            $t->timestamps();
+        });
+
+        Schema::create('client_rooms', function (Blueprint $t) {
+            $t->id();
+            $t->string('email');
+            $t->string('name')->nullable();
+            $t->string('owner_user_id', 64)->nullable();
+            $t->text('notes')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('client_room_sessions', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('room_id')->constrained('client_rooms')->cascadeOnDelete();
+            $t->string('title');
+            $t->text('summary')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('client_room_tasks', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('room_id')->constrained('client_rooms')->cascadeOnDelete();
+            $t->string('title');
+            $t->timestamps();
+        });
+
+        Schema::create('client_room_task_submissions', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('task_id')->constrained('client_room_tasks')->cascadeOnDelete();
+            $t->text('body')->nullable();
+            $t->string('submitted_by', 64)->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('client_room_task_submission_files', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('submission_id')->constrained('client_room_task_submissions')->cascadeOnDelete();
+            $t->string('container');
+            $t->string('path');
+            $t->timestamps();
+        });
+
+        Schema::create('client_room_files', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('room_id')->constrained('client_rooms')->cascadeOnDelete();
+            $t->string('container');
+            $t->string('path');
+            $t->string('uploaded_by', 64)->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('inbox_conversations', function (Blueprint $t) {
+            $t->id();
+            $t->string('subject');
+            $t->string('counterpart_email');
+            $t->string('status', 32)->default('open');
+            $t->timestamp('last_message_at')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('inbox_messages', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('conversation_id')->constrained('inbox_conversations')->cascadeOnDelete();
+            $t->string('direction', 8);
+            $t->string('from_email');
+            $t->string('from_name')->nullable();
+            $t->text('to')->nullable();
+            $t->text('cc')->nullable();
+            $t->string('subject');
+            $t->text('text')->nullable();
+            $t->text('html_sanitized')->nullable();
+            $t->timestamp('sent_at')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('inbox_attachments', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('message_id')->constrained('inbox_messages')->cascadeOnDelete();
+            $t->string('filename');
+            $t->string('mime')->default('application/octet-stream');
+            $t->unsignedBigInteger('size')->default(0);
+            $t->string('path');
+            $t->timestamps();
+        });
+
+        Schema::create('offer_seat_pools', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('payment_id');
+            $t->string('offer');
+            $t->string('owner_email');
+            $t->string('owner_name')->nullable();
+            $t->unsignedInteger('seats');
+            $t->string('manage_token', 64);
+            $t->timestamps();
+        });
+
+        Schema::create('offer_seats', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('pool_id')->constrained('offer_seat_pools')->cascadeOnDelete();
+            $t->string('email');
+            $t->string('name')->nullable();
+            $t->string('token', 64);
+            $t->string('status', 16);
+            $t->timestamps();
+        });
+
+        Schema::create('funnel_visits', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('funnel_id');
+            $t->string('token', 64);
+            $t->string('email')->nullable();
+            $t->string('name')->nullable();
+            $t->unsignedBigInteger('payment_id')->nullable();
+            $t->text('meta')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('funnel_step_events', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('visit_id')->constrained('funnel_visits')->cascadeOnDelete();
+            $t->string('node_key');
+            $t->string('event');
+            $t->text('payload')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('funnel_mail_deliveries', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('visit_id')->constrained('funnel_visits')->cascadeOnDelete();
+            $t->unsignedBigInteger('funnel_id');
+            $t->string('node_key');
+            $t->string('to')->nullable();
+            $t->timestamps();
+        });
     }
 
     /**
@@ -280,6 +423,16 @@ trait SeedsSiblingTables
         DB::table('courses_lesson_states')->insert(['user_id' => 'fremd-id', 'lesson_entry_id' => 'lektion-1', 'completion_percent' => 50, 'created_at' => $now]);
         DB::table('courses_lesson_events')->insert(['user_id' => 'fremd-id', 'lesson_entry_id' => 'lektion-1', 'event_type' => 'started', 'created_at' => $now]);
         DB::table('courses_team_members')->insert(['owner_id' => 'fremd-id', 'product' => 'kurs-team', 'email' => 'kollege@example.com', 'slot' => 1, 'created_at' => $now]);
+
+        DB::table('certificates_issued')->insert(['code' => 'FREMD-0001', 'subject_type' => 'user', 'subject_id' => 'fremd-id', 'course_id' => 'kurs-1', 'learner_name' => 'Fremde Person', 'created_at' => $now]);
+        $room = DB::table('client_rooms')->insertGetId(['email' => 'fremd@example.com', 'owner_user_id' => 'fremd-id', 'created_at' => $now]);
+        DB::table('client_room_sessions')->insert(['room_id' => $room, 'title' => 'Erste Stunde', 'created_at' => $now]);
+        $conversation = DB::table('inbox_conversations')->insertGetId(['subject' => 'Frage', 'counterpart_email' => 'fremd@example.com', 'created_at' => $now]);
+        DB::table('inbox_messages')->insert(['conversation_id' => $conversation, 'direction' => 'in', 'from_email' => 'fremd@example.com', 'subject' => 'Frage', 'created_at' => $now]);
+        $pool = DB::table('offer_seat_pools')->insertGetId(['payment_id' => 99, 'offer' => 'chor-paket', 'owner_email' => 'fremd@example.com', 'seats' => 3, 'manage_token' => str_repeat('p', 64), 'created_at' => $now]);
+        DB::table('offer_seats')->insert(['pool_id' => $pool, 'email' => 'kollege@example.com', 'token' => str_repeat('q', 64), 'status' => 'claimed', 'created_at' => $now]);
+        $visit = DB::table('funnel_visits')->insertGetId(['funnel_id' => 1, 'token' => str_repeat('v', 64), 'email' => 'fremd@example.com', 'created_at' => $now]);
+        DB::table('funnel_step_events')->insert(['visit_id' => $visit, 'node_key' => 'start', 'event' => 'entered', 'created_at' => $now]);
     }
 
     /**
@@ -304,9 +457,11 @@ trait SeedsSiblingTables
             $columns = Schema::getColumnListing($table);
             $query = DB::table($table)->where(function ($q) use ($columns, $id, $email) {
                 foreach ($columns as $column) {
-                    $q->orWhereRaw('lower(cast('.$column.' as text)) like ?', ['%'.mb_strtolower($email).'%']);
+                    // Quoted: funnels has a column called `to`.
+                    $wrapped = $q->getGrammar()->wrap($column);
+                    $q->orWhereRaw('lower(cast('.$wrapped.' as text)) like ?', ['%'.mb_strtolower($email).'%']);
                     $q->orWhere($column, $id);
-                    $q->orWhereRaw('cast('.$column.' as text) like ?', ['%"'.$id.'"%']);
+                    $q->orWhereRaw('cast('.$wrapped.' as text) like ?', ['%"'.$id.'"%']);
                 }
             });
 
@@ -369,5 +524,34 @@ trait SeedsSiblingTables
             ['owner_id' => (string) $user->id(), 'product' => 'kurs-team', 'email' => 'chorkollegin@example.com', 'slot' => 1, 'created_at' => $now],
             ['owner_id' => 'fremd-id', 'product' => 'kurs-team', 'email' => 'sina@example.com', 'slot' => 2, 'created_at' => $now],
         ]);
+
+        // A certificate with her name on it.
+        DB::table('certificates_issued')->insert(['code' => 'SINA-0001', 'subject_type' => 'user', 'subject_id' => (string) $user->id(), 'course_id' => 'kurs-1', 'learner_name' => 'Sina Sänger', 'created_at' => $now]);
+
+        // A coaching room with a sitting, a task she answered with a file, and a document.
+        $room = DB::table('client_rooms')->insertGetId(['email' => 'Sina@Example.com', 'name' => 'Sina Sänger', 'owner_user_id' => (string) $user->id(), 'notes' => 'Höhe eng', 'created_at' => $now]);
+        DB::table('client_room_sessions')->insert(['room_id' => $room, 'title' => 'Stunde 1', 'summary' => 'Atem', 'created_at' => $now]);
+        $task = DB::table('client_room_tasks')->insertGetId(['room_id' => $room, 'title' => 'Aufnahme schicken', 'created_at' => $now]);
+        $submission = DB::table('client_room_task_submissions')->insertGetId(['task_id' => $task, 'body' => 'Hier meine Aufnahme', 'submitted_by' => (string) $user->id(), 'created_at' => $now]);
+        DB::table('client_room_task_submission_files')->insert(['submission_id' => $submission, 'container' => 'clientrooms', 'path' => 'sina/aufnahme.m4a', 'created_at' => $now]);
+        DB::table('client_room_files')->insert(['room_id' => $room, 'container' => 'clientrooms', 'path' => 'sina/plan.pdf', 'uploaded_by' => (string) $user->id(), 'created_at' => $now]);
+
+        // A conversation with her in the inbox, one mail with an attachment.
+        $conversation = DB::table('inbox_conversations')->insertGetId(['subject' => 'Probe am Freitag', 'counterpart_email' => 'Sina@example.com', 'created_at' => $now]);
+        $mail = DB::table('inbox_messages')->insertGetId(['conversation_id' => $conversation, 'direction' => 'in', 'from_email' => 'sina@example.com', 'from_name' => 'Sina Sänger', 'to' => '["info@example.com"]', 'subject' => 'Probe am Freitag', 'text' => 'Bis Freitag', 'created_at' => $now]);
+        DB::table('inbox_attachments')->insert(['message_id' => $mail, 'filename' => 'noten.pdf', 'size' => 10, 'path' => 'inbox/noten.pdf', 'created_at' => $now]);
+
+        // A seat she holds in someone else's pool, a pool she bought for
+        // herself alone, and one she bought with a colleague in it.
+        $fremderPool = DB::table('offer_seat_pools')->insertGetId(['payment_id' => 98, 'offer' => 'chor-paket', 'owner_email' => 'chorleiterin@example.com', 'seats' => 5, 'manage_token' => str_repeat('m', 64), 'created_at' => $now]);
+        DB::table('offer_seats')->insert(['pool_id' => $fremderPool, 'email' => 'sina@example.com', 'name' => 'Sina Sänger', 'token' => str_repeat('s', 64), 'status' => 'claimed', 'created_at' => $now]);
+        DB::table('offer_seat_pools')->insert(['payment_id' => $paymentId, 'offer' => 'solo', 'owner_email' => 'Sina@example.com', 'owner_name' => 'Sina Sänger', 'seats' => 1, 'manage_token' => str_repeat('n', 64), 'created_at' => $now]);
+        $geteilterPool = DB::table('offer_seat_pools')->insertGetId(['payment_id' => $paymentId, 'offer' => 'duo', 'owner_email' => 'sina@example.com', 'owner_name' => 'Sina Sänger', 'seats' => 2, 'manage_token' => str_repeat('o', 64), 'created_at' => $now]);
+        DB::table('offer_seats')->insert(['pool_id' => $geteilterPool, 'email' => 'chorkollegin@example.com', 'token' => str_repeat('t', 64), 'status' => 'invited', 'created_at' => $now]);
+
+        // A funnel visit with a step and a mail.
+        $visit = DB::table('funnel_visits')->insertGetId(['funnel_id' => 1, 'token' => str_repeat('w', 64), 'email' => 'Sina@example.com', 'name' => 'Sina Sänger', 'payment_id' => $paymentId, 'created_at' => $now]);
+        DB::table('funnel_step_events')->insert(['visit_id' => $visit, 'node_key' => 'start', 'event' => 'entered', 'created_at' => $now]);
+        DB::table('funnel_mail_deliveries')->insert(['visit_id' => $visit, 'funnel_id' => 1, 'node_key' => 'danke', 'to' => 'sina@example.com', 'created_at' => $now]);
     }
 }

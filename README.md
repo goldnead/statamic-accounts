@@ -110,8 +110,25 @@ sets where to go after submitting (a path on the site).
 **Confirmation is Statamic's elevated session.** Changing the address, deleting and
 downloading the data need one (`statamic.users.elevated_sessions_enabled`). Without it
 the visitor is sent to core's confirmation page (password, passkey or mailed code,
-whatever the account has) and comes back to where they were; the download starts on
-its own. `elevated` tells a template whether the session already is. With elevated
+whatever the account has). After confirming, the form's action runs on its own (no
+second click: the action waits in the session for 30 minutes, `statamic.accounts.resume`
+runs it once) and the visitor lands where the form would have sent them; the download
+starts on its own.
+
+**The confirmation page in the site's look.** Core's page is styled like the Control
+Panel. This addon ships the same page as a page of the site (password or mailed code),
+posting to core's own confirmation route:
+
+```php
+// config/statamic/users.php
+'elevated_sessions_url' => '/!/statamic-accounts/confirm',
+```
+
+`accounts::confirm` extends `accounts::layout`; put your own
+`resources/views/vendor/accounts/layout.blade.php` in place (fill `title` and `content`,
+style `.btn`, `.field`, `.error`, `.status`, `.muted`). An account that may only confirm
+with a passkey (`statamic.webauthn.allow_password_login_with_passkey` off) is told this
+page cannot do that; keep core's page on such a site. `elevated` tells a template whether the session already is. With elevated
 sessions switched off in Statamic there is no second confirmation, as for core's own
 sensitive actions.
 
@@ -235,6 +252,11 @@ id points at nothing.
 | marketing | List subscriptions deleted (not unsubscribed) with the mails sent to them, their opens and clicks, and the frequency-cap log. The suppression list is not touched: it is what keeps an address from being mailed again |
 | lead-magnets | Grants requested with the address deleted with their download log |
 | courses | Enrolments, lesson progress and progress events deleted; course team seats the person holds or owns deleted |
+| certificates | Certificates issued to the user deleted with their PDFs; the code no longer verifies |
+| clientrooms | Rooms held for the address or owned by the user deleted with sittings, tasks, answers and documents (through the room model, so the asset files go too) |
+| inbox | Conversations with the address deleted with their mails and attachment files. Only Statamic's copy: the mail server is not touched. Mails naming the person in another conversation (Cc) stay |
+| offers | Seats held by the address deleted. A seat pool the person bought: deleted when nobody else is seated, otherwise kept for the others without the buyer's name and address and with a new management link (noted on the request) |
+| funnels | Visits under the address deleted with their steps and the funnel mails sent to the address |
 | payments | **Kept**, untouched: accounting records, ten years (§ 147 AO, § 14b UStG) |
 | invoices | **Kept**, untouched: tax documents, ten years |
 
@@ -294,7 +316,10 @@ or user id, with events, notes, follow-ups, revenue; database driver only),
 `notifications` (items, preferences, digests), `teams` (memberships), `invoices`
 (invoices and lines by buyer address), `activity` (ledger entries under the user id),
 `marketing` (list subscriptions, mails sent, opens and clicks), `lead_magnets` (free
-downloads and their log), `courses` (enrolments, progress, team seats). They read the
+downloads and their log), `courses` (enrolments, progress, team seats),
+`certificates` (certificates issued), `clientrooms` (rooms, sittings, tasks, answers,
+document list), `inbox` (conversations, mails as text, attachment names), `offers` (seats
+held, pools bought and who is seated in them), `funnels` (visits, steps, mails). They read the
 siblings' tables directly, across all brands, and leave out password hashes, tokens and
 IP hashes. A contributor registered later under the same key replaces the shipped one.
 

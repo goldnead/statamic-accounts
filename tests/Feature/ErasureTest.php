@@ -124,6 +124,26 @@ class ErasureTest extends TestCase
         $this->assertSame(1, DB::table('courses_team_members')->count());
         $this->assertSame('kollege@example.com', DB::table('courses_team_members')->value('email'));
 
+        $this->assertSame(['FREMD-0001'], DB::table('certificates_issued')->pluck('code')->all());
+        $this->assertSame(['fremd@example.com'], DB::table('client_rooms')->pluck('email')->all());
+        $this->assertSame(1, DB::table('client_room_sessions')->count());
+        $this->assertSame(0, DB::table('client_room_tasks')->count() + DB::table('client_room_files')->count() + DB::table('client_room_task_submission_files')->count());
+        $this->assertSame(['fremd@example.com'], DB::table('inbox_conversations')->pluck('counterpart_email')->all());
+        $this->assertSame(1, DB::table('inbox_messages')->count());
+        $this->assertSame(0, DB::table('inbox_attachments')->count());
+        $this->assertSame(['fremd@example.com'], DB::table('funnel_visits')->pluck('email')->all());
+        $this->assertSame(1, DB::table('funnel_step_events')->count());
+        $this->assertSame(0, DB::table('funnel_mail_deliveries')->count());
+        // Seats: hers went; the colleague's in the pool she bought stays,
+        // the pool without her address and with a new management link.
+        $this->assertEqualsCanonicalizing(['kollege@example.com', 'chorkollegin@example.com'], DB::table('offer_seats')->pluck('email')->all());
+        $duo = DB::table('offer_seat_pools')->where('offer', 'duo')->first();
+        $this->assertSame('', $duo->owner_email);
+        $this->assertNull($duo->owner_name);
+        $this->assertNotSame(str_repeat('o', 64), $duo->manage_token);
+        $this->assertSame(0, DB::table('offer_seat_pools')->where('offer', 'solo')->count());
+        $this->assertSame(1, DB::table('offer_seat_pools')->where('owner_email', 'chorleiterin@example.com')->count());
+
         // Her own team went with her; the one with others stayed, without her.
         $this->assertSame(0, DB::table('teams')->where('name', 'Kammerchor Nord')->count());
         $this->assertSame(1, DB::table('teams')->where('name', 'Gospelprojekt')->count());
@@ -135,6 +155,13 @@ class ErasureTest extends TestCase
         $this->assertSame(['subscriptions' => 1, 'messages' => 1, 'message_events' => 1, 'mail_log' => 1], $erasure['marketing']['deleted']);
         $this->assertSame(['grants' => 1, 'downloads' => 1], $erasure['lead_magnets']['deleted']);
         $this->assertSame(['enrollments' => 1, 'lesson_states' => 1, 'lesson_events' => 1, 'team_seats' => 2], $erasure['courses']['deleted']);
+        $this->assertSame(['certificates' => 1], $erasure['certificates']['deleted']);
+        $this->assertSame(['rooms' => 1, 'sessions' => 1, 'tasks' => 1, 'task_submissions' => 1, 'files' => 2], $erasure['clientrooms']['deleted']);
+        $this->assertSame(['conversations' => 1, 'messages' => 1, 'attachments' => 1], $erasure['inbox']['deleted']);
+        $this->assertSame(['seats' => 1, 'pools' => 1], $erasure['offers']['deleted']);
+        $this->assertSame(['pools' => 1], $erasure['offers']['anonymized']);
+        $this->assertNotEmpty($erasure['offers']['note']);
+        $this->assertSame(['visits' => 1, 'step_events' => 1, 'mail_deliveries' => 1], $erasure['funnels']['deleted']);
         $this->assertSame(1, $erasure['payments']['retained']['payments']);
         $this->assertSame(1, $erasure['invoices']['retained']['invoices']);
         $this->assertNotEmpty($erasure['payments']['note']);
