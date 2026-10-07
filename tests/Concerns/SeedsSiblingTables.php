@@ -165,6 +165,95 @@ trait SeedsSiblingTables
             $t->boolean('anonymized')->default(false);
             $t->timestamp('occurred_at')->nullable();
         });
+
+        Schema::create('marketing_subscriptions', function (Blueprint $t) {
+            $t->id();
+            $t->uuid('uuid');
+            $t->string('list_handle');
+            $t->string('email');
+            $t->string('email_normalized');
+            $t->string('first_name')->nullable();
+            $t->string('last_name')->nullable();
+            $t->string('status');
+            $t->string('token', 64);
+            $t->json('meta')->nullable();
+            $t->timestamp('confirmed_at')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('marketing_messages', function (Blueprint $t) {
+            $t->id();
+            $t->uuid('uuid');
+            $t->string('campaign_handle')->nullable();
+            $t->unsignedBigInteger('subscription_id');
+            $t->string('email');
+            $t->string('status');
+            $t->timestamps();
+        });
+
+        Schema::create('marketing_message_events', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('message_id');
+            $t->string('type');
+            $t->text('url')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('marketing_mail_log', function (Blueprint $t) {
+            $t->id();
+            $t->string('email_normalized');
+            $t->string('mail_class', 20);
+            $t->timestamp('sent_at');
+        });
+
+        Schema::create('lead_magnet_grants', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('brand_id')->default(1);
+            $t->unsignedBigInteger('resource_id');
+            $t->string('email', 191);
+            $t->string('token_hash', 64)->nullable();
+            $t->json('meta')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('lead_magnet_downloads', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('grant_id');
+            $t->string('ip_hash')->nullable();
+            $t->timestamp('downloaded_at')->nullable();
+        });
+
+        Schema::create('courses_enrollments', function (Blueprint $t) {
+            $t->id();
+            $t->string('user_id', 64);
+            $t->string('course_entry_id', 64);
+            $t->timestamps();
+        });
+
+        Schema::create('courses_lesson_states', function (Blueprint $t) {
+            $t->id();
+            $t->string('user_id', 64);
+            $t->string('lesson_entry_id', 64);
+            $t->unsignedTinyInteger('completion_percent')->default(0);
+            $t->timestamps();
+        });
+
+        Schema::create('courses_lesson_events', function (Blueprint $t) {
+            $t->id();
+            $t->string('user_id', 64);
+            $t->string('lesson_entry_id', 64);
+            $t->string('event_type', 64);
+            $t->timestamps();
+        });
+
+        Schema::create('courses_team_members', function (Blueprint $t) {
+            $t->id();
+            $t->string('owner_id', 64);
+            $t->string('product', 191);
+            $t->string('email', 191);
+            $t->unsignedInteger('slot');
+            $t->timestamps();
+        });
     }
 
     /**
@@ -180,6 +269,17 @@ trait SeedsSiblingTables
         DB::table('leadhub_contacts')->insert(['email' => 'fremd@example.com', 'email_normalized' => 'fremd@example.com', 'created_at' => $now]);
         DB::table('notification_items')->insert(['user_id' => 'fremd-id', 'message' => 'x', 'created_at' => $now]);
         DB::table('activities')->insert(['event_type' => 'x', 'user_id' => 'fremd-id', 'properties' => '{"email":"fremd@example.com"}', 'occurred_at' => $now]);
+
+        $subscription = DB::table('marketing_subscriptions')->insertGetId(['uuid' => '00000000-0000-0000-0000-00000000f000', 'list_handle' => 'newsletter', 'email' => 'fremd@example.com', 'email_normalized' => 'fremd@example.com', 'status' => 'confirmed', 'token' => str_repeat('f', 64), 'created_at' => $now]);
+        $message = DB::table('marketing_messages')->insertGetId(['uuid' => '00000000-0000-0000-0000-00000000f001', 'campaign_handle' => 'herbst', 'subscription_id' => $subscription, 'email' => 'fremd@example.com', 'status' => 'sent', 'created_at' => $now]);
+        DB::table('marketing_message_events')->insert(['message_id' => $message, 'type' => 'open', 'created_at' => $now]);
+        DB::table('marketing_mail_log')->insert(['email_normalized' => 'fremd@example.com', 'mail_class' => 'marketing', 'sent_at' => $now]);
+        $grant = DB::table('lead_magnet_grants')->insertGetId(['resource_id' => 1, 'email' => 'fremd@example.com', 'created_at' => $now]);
+        DB::table('lead_magnet_downloads')->insert(['grant_id' => $grant, 'downloaded_at' => $now]);
+        DB::table('courses_enrollments')->insert(['user_id' => 'fremd-id', 'course_entry_id' => 'kurs-1', 'created_at' => $now]);
+        DB::table('courses_lesson_states')->insert(['user_id' => 'fremd-id', 'lesson_entry_id' => 'lektion-1', 'completion_percent' => 50, 'created_at' => $now]);
+        DB::table('courses_lesson_events')->insert(['user_id' => 'fremd-id', 'lesson_entry_id' => 'lektion-1', 'event_type' => 'started', 'created_at' => $now]);
+        DB::table('courses_team_members')->insert(['owner_id' => 'fremd-id', 'product' => 'kurs-team', 'email' => 'kollege@example.com', 'slot' => 1, 'created_at' => $now]);
     }
 
     /**
@@ -250,5 +350,24 @@ trait SeedsSiblingTables
 
         $teamId = DB::table('teams')->insertGetId(['name' => 'Kammerchor Nord', 'type' => 'choir', 'owner_id' => (string) $user->id(), 'created_at' => $now]);
         DB::table('team_members')->insert(['team_id' => $teamId, 'user_id' => (string) $user->id(), 'role' => 'owner', 'joined_at' => $now, 'created_at' => $now]);
+
+        // Newsletter: the address as typed, a sent campaign with an open.
+        $subscription = DB::table('marketing_subscriptions')->insertGetId(['uuid' => '00000000-0000-0000-0000-000000000a01', 'list_handle' => 'newsletter', 'email' => 'Sina@Example.com', 'email_normalized' => 'sina@example.com', 'first_name' => 'Sina', 'last_name' => 'Sänger', 'status' => 'confirmed', 'token' => str_repeat('a', 64), 'meta' => '{"source":"footer"}', 'confirmed_at' => $now, 'created_at' => $now]);
+        $message = DB::table('marketing_messages')->insertGetId(['uuid' => '00000000-0000-0000-0000-000000000a02', 'campaign_handle' => 'herbst', 'subscription_id' => $subscription, 'email' => 'sina@example.com', 'status' => 'sent', 'created_at' => $now]);
+        DB::table('marketing_message_events')->insert(['message_id' => $message, 'type' => 'click', 'url' => 'https://example.com/kurs', 'created_at' => $now]);
+        DB::table('marketing_mail_log')->insert(['email_normalized' => 'sina@example.com', 'mail_class' => 'marketing', 'sent_at' => $now]);
+
+        // A free download against her address, downloaded once.
+        $grant = DB::table('lead_magnet_grants')->insertGetId(['resource_id' => 1, 'email' => 'Sina@example.com', 'token_hash' => str_repeat('b', 64), 'created_at' => $now]);
+        DB::table('lead_magnet_downloads')->insert(['grant_id' => $grant, 'ip_hash' => 'def456', 'downloaded_at' => $now]);
+
+        // Course progress under her id, a team seat she owns and one she holds.
+        DB::table('courses_enrollments')->insert(['user_id' => (string) $user->id(), 'course_entry_id' => 'kurs-1', 'created_at' => $now]);
+        DB::table('courses_lesson_states')->insert(['user_id' => (string) $user->id(), 'lesson_entry_id' => 'lektion-1', 'completion_percent' => 100, 'created_at' => $now]);
+        DB::table('courses_lesson_events')->insert(['user_id' => (string) $user->id(), 'lesson_entry_id' => 'lektion-1', 'event_type' => 'completed', 'created_at' => $now]);
+        DB::table('courses_team_members')->insert([
+            ['owner_id' => (string) $user->id(), 'product' => 'kurs-team', 'email' => 'chorkollegin@example.com', 'slot' => 1, 'created_at' => $now],
+            ['owner_id' => 'fremd-id', 'product' => 'kurs-team', 'email' => 'sina@example.com', 'slot' => 2, 'created_at' => $now],
+        ]);
     }
 }

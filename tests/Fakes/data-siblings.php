@@ -78,6 +78,24 @@ namespace Goldnead\Notifications\Models {
     }
 }
 
+namespace Goldnead\Marketing\Models {
+    if (! class_exists(Subscription::class)) {
+        class Subscription {}
+    }
+}
+
+namespace Goldnead\LeadMagnets\Models {
+    if (! class_exists(Grant::class)) {
+        class Grant {}
+    }
+}
+
+namespace Goldnead\Courses\Models {
+    if (! class_exists(LessonState::class)) {
+        class LessonState {}
+    }
+}
+
 namespace Goldnead\Teams\Models {
     if (! class_exists(Team::class)) {
         class Team {}

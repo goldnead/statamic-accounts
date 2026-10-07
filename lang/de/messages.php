@@ -44,6 +44,9 @@ return [
     'elevation_unavailable' => 'Diese Aktion braucht eine Bestätigung, aber die Bestätigungsseite ist nicht eingerichtet. Bitte melde dich beim Betreiber.',
     'section_invoices' => 'Rechnungen',
     'section_activity' => 'Protokoll',
+    'section_marketing' => 'Newsletter',
+    'section_lead_magnets' => 'Kostenlose Downloads',
+    'section_courses' => 'Kurse',
 
     'blocker_subscription' => 'Dein Abo „:product“ läuft noch. Kündige es zuerst, dann kannst du dein Konto löschen.',
     'blocker_subscription_portal' => 'Dein Abo „:product“ läuft noch. Kündige es zuerst im Kundenportal (:url), dann kannst du dein Konto löschen.',

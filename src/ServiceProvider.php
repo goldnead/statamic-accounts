@@ -13,9 +13,12 @@ use Goldnead\Accounts\Integrations\EmailTemplates\RegistersTemplates;
 use Goldnead\Accounts\Integrations\WebhookManager\WebhookManagerBridge;
 use Goldnead\Accounts\PersonalData\Contributors\AccountContributor;
 use Goldnead\Accounts\PersonalData\Contributors\ActivityContributor;
+use Goldnead\Accounts\PersonalData\Contributors\CoursesContributor;
 use Goldnead\Accounts\PersonalData\Contributors\EntitlementsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\InvoicesContributor;
 use Goldnead\Accounts\PersonalData\Contributors\LeadhubContributor;
+use Goldnead\Accounts\PersonalData\Contributors\LeadMagnetsContributor;
+use Goldnead\Accounts\PersonalData\Contributors\MarketingContributor;
 use Goldnead\Accounts\PersonalData\Contributors\NotificationsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\PaymentsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\TeamsContributor;
@@ -77,6 +80,9 @@ class ServiceProvider extends AddonServiceProvider
         NotificationsContributor::class,
         TeamsContributor::class,
         ActivityContributor::class,
+        MarketingContributor::class,
+        LeadMagnetsContributor::class,
+        CoursesContributor::class,
     ];
 
     /**
@@ -95,6 +101,9 @@ class ServiceProvider extends AddonServiceProvider
         LeadhubContributor::class,
         NotificationsContributor::class,
         TeamsContributor::class,
+        MarketingContributor::class,
+        LeadMagnetsContributor::class,
+        CoursesContributor::class,
     ];
 
     public function register(): void
