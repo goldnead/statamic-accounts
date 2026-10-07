@@ -96,6 +96,36 @@ namespace Goldnead\Courses\Models {
     }
 }
 
+namespace Goldnead\Certificates\Models {
+    if (! class_exists(Certificate::class)) {
+        class Certificate {}
+    }
+}
+
+namespace Goldnead\ClientRooms\Models {
+    if (! class_exists(ClientRoom::class)) {
+        class ClientRoom {}
+    }
+}
+
+namespace Goldnead\StatamicInbox\Models {
+    if (! class_exists(Conversation::class)) {
+        class Conversation {}
+    }
+}
+
+namespace Goldnead\StatamicOffers\Models {
+    if (! class_exists(SeatPool::class)) {
+        class SeatPool {}
+    }
+}
+
+namespace Goldnead\StatamicFunnels\Models {
+    if (! class_exists(FunnelVisit::class)) {
+        class FunnelVisit {}
+    }
+}
+
 namespace Goldnead\Teams\Models {
     if (! class_exists(Team::class)) {
         class Team {}

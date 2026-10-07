@@ -25,7 +25,7 @@ abstract class TableContributor implements ContributesPersonalData
      *
      * @var list<string>
      */
-    protected const HIDDEN = ['ip_hash', 'token', 'token_hash', 'password', 'secret', 'remember_token', 'visit_token'];
+    protected const HIDDEN = ['ip_hash', 'token', 'token_hash', 'password', 'secret', 'remember_token', 'visit_token', 'manage_token'];
 
     /**
      * The sibling's class whose presence means "installed".

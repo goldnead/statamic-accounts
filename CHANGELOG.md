@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.4.0 — 2026-10-07
+
+Deleting an account on adriangoldner.com still left certificates, coaching rooms, the inbox,
+seats and funnel visits behind, asked for the same click twice, and confirmed on a page in
+Control Panel style.
+
+### Added
+
+- **certificates**: export and erasure of the certificates issued to the user, PDFs included.
+- **clientrooms**: export and erasure of the rooms held for the address or owned by the user,
+  with sittings, tasks, answers and documents. Deleted through the room model when installed,
+  so the asset files go too.
+- **inbox**: export and erasure of the conversations with the address, their mails and
+  attachment files (Statamic's copy only; the mail server is not touched).
+- **offers**: export and erasure of seats held by the address. A pool the person bought is
+  deleted when nobody else is seated in it, otherwise kept for the others without the buyer's
+  name and address and with a new management link.
+- **funnels**: export and erasure of visits under the address, their steps and funnel mails.
+- **Confirmation page in the site's look**: `statamic.accounts.confirm`
+  (`/!/statamic-accounts/confirm`), for `statamic.users.elevated_sessions_url`. Password or
+  mailed code, posting to core's own confirmation. View `accounts::confirm` extends
+  `accounts::layout`, which a site overrides.
+
+### Changed
+
+- **No second click after the confirmation.** Deleting and changing the address without an
+  elevated session used to come back to the form after confirming, and the button had to be
+  pressed again. The action now waits in the session (30 minutes) and runs once the
+  confirmation returns (`statamic.accounts.resume`), then goes where the form would have.
+- The export leaves out `manage_token` like other tokens.
+
 ## 0.3.0 — 2026-10-07
 
 Deleting an account on adriangoldner.com left the newsletter subscription, the free downloads

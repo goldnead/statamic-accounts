@@ -84,7 +84,7 @@ class PersonalDataExportTest extends TestCase
 
         $this->assertStringEndsWith('.zip', $file['filename']);
         $this->assertEqualsCanonicalizing(
-            ['manifest.json', 'account.json', 'payments.json', 'invoices.json', 'entitlements.json', 'leadhub.json', 'notifications.json', 'teams.json', 'activity.json', 'courses.json', 'marketing.json', 'lead_magnets.json'],
+            ['manifest.json', 'account.json', 'payments.json', 'invoices.json', 'entitlements.json', 'leadhub.json', 'notifications.json', 'teams.json', 'activity.json', 'courses.json', 'marketing.json', 'lead_magnets.json', 'certificates.json', 'clientrooms.json', 'inbox.json', 'offers.json', 'funnels.json'],
             array_keys($files),
         );
 
@@ -114,6 +114,24 @@ class PersonalDataExportTest extends TestCase
         $this->assertCount(1, $files['lead_magnets.json']['grants']);
         $this->assertArrayNotHasKey('token_hash', $files['lead_magnets.json']['grants'][0]);
         $this->assertCount(1, $files['lead_magnets.json']['downloads']);
+
+        // Certificates, coaching rooms, inbox, seats, funnels: only hers.
+        $this->assertSame(['SINA-0001'], array_column($files['certificates.json']['certificates'], 'code'));
+        $this->assertCount(1, $files['clientrooms.json']['rooms']);
+        $this->assertCount(1, $files['clientrooms.json']['task_submissions']);
+        $this->assertCount(1, $files['clientrooms.json']['files']);
+        $this->assertSame(['Probe am Freitag'], array_column($files['inbox.json']['conversations'], 'subject'));
+        $this->assertSame('Bis Freitag', $files['inbox.json']['messages'][0]['text']);
+        $this->assertArrayNotHasKey('html_sanitized', $files['inbox.json']['messages'][0]);
+        $this->assertSame(['noten.pdf'], array_column($files['inbox.json']['attachments'], 'filename'));
+        $this->assertArrayNotHasKey('path', $files['inbox.json']['attachments'][0]);
+        $this->assertCount(1, $files['offers.json']['seats']);
+        $this->assertArrayNotHasKey('token', $files['offers.json']['seats'][0]);
+        $this->assertCount(2, $files['offers.json']['pools']);
+        $this->assertArrayNotHasKey('manage_token', $files['offers.json']['pools'][0]);
+        $this->assertCount(1, $files['funnels.json']['visits']);
+        $this->assertArrayNotHasKey('token', $files['funnels.json']['visits'][0]);
+        $this->assertCount(1, $files['funnels.json']['mail_deliveries']);
 
         // The account without its secrets.
         $this->assertSame('sina@example.com', $files['account.json']['email']);

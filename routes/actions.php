@@ -1,6 +1,7 @@
 <?php
 
 use Goldnead\Accounts\Http\Controllers\Web\AccountController;
+use Goldnead\Accounts\Http\Controllers\Web\ConfirmController;
 use Goldnead\Accounts\Http\Controllers\Web\LinkController;
 use Illuminate\Routing\Middleware\ValidateSignature;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,17 @@ Route::name('accounts.')->group(function () {
 
     Route::post('deletion/withdraw', [AccountController::class, 'withdrawDeletion'])
         ->name('deletion.withdraw');
+
+    // Core's confirmation page in the site's look; a site points
+    // `statamic.users.elevated_sessions_url` here.
+    Route::get('confirm', [ConfirmController::class, 'show'])
+        ->name('confirm');
+
+    // Where core's confirmation page returns after a form needed it: runs
+    // the action the form had asked for (kept in the session), once.
+    Route::get('resume', [AccountController::class, 'resume'])
+        ->middleware('throttle:6,1')
+        ->name('resume');
 
     // Limited by `accounts.export.throttle` ("max,minutes", per person),
     // through the named limiter the provider defines. Named, so the value is

@@ -13,13 +13,18 @@ use Goldnead\Accounts\Integrations\EmailTemplates\RegistersTemplates;
 use Goldnead\Accounts\Integrations\WebhookManager\WebhookManagerBridge;
 use Goldnead\Accounts\PersonalData\Contributors\AccountContributor;
 use Goldnead\Accounts\PersonalData\Contributors\ActivityContributor;
+use Goldnead\Accounts\PersonalData\Contributors\CertificatesContributor;
+use Goldnead\Accounts\PersonalData\Contributors\ClientRoomsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\CoursesContributor;
 use Goldnead\Accounts\PersonalData\Contributors\EntitlementsContributor;
+use Goldnead\Accounts\PersonalData\Contributors\FunnelsContributor;
+use Goldnead\Accounts\PersonalData\Contributors\InboxContributor;
 use Goldnead\Accounts\PersonalData\Contributors\InvoicesContributor;
 use Goldnead\Accounts\PersonalData\Contributors\LeadhubContributor;
 use Goldnead\Accounts\PersonalData\Contributors\LeadMagnetsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\MarketingContributor;
 use Goldnead\Accounts\PersonalData\Contributors\NotificationsContributor;
+use Goldnead\Accounts\PersonalData\Contributors\OffersContributor;
 use Goldnead\Accounts\PersonalData\Contributors\PaymentsContributor;
 use Goldnead\Accounts\PersonalData\Contributors\TeamsContributor;
 use Goldnead\Accounts\PersonalData\ErasureRegistry;
@@ -83,6 +88,11 @@ class ServiceProvider extends AddonServiceProvider
         MarketingContributor::class,
         LeadMagnetsContributor::class,
         CoursesContributor::class,
+        CertificatesContributor::class,
+        ClientRoomsContributor::class,
+        InboxContributor::class,
+        OffersContributor::class,
+        FunnelsContributor::class,
     ];
 
     /**
@@ -104,6 +114,11 @@ class ServiceProvider extends AddonServiceProvider
         MarketingContributor::class,
         LeadMagnetsContributor::class,
         CoursesContributor::class,
+        CertificatesContributor::class,
+        ClientRoomsContributor::class,
+        InboxContributor::class,
+        OffersContributor::class,
+        FunnelsContributor::class,
     ];
 
     public function register(): void
