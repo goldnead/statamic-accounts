@@ -232,6 +232,9 @@ id points at nothing.
 | leadhub | Contact deleted with events, notes, follow-ups, tasks, revenue lines (database driver) |
 | notifications | Notifications, preferences, digest runs deleted |
 | teams | Memberships removed; a team held alone without other members is deleted with its invitations and roles; an ownership shared with another owner passes to them; the person's id comes off invitations they sent |
+| marketing | List subscriptions deleted (not unsubscribed) with the mails sent to them, their opens and clicks, and the frequency-cap log. The suppression list is not touched: it is what keeps an address from being mailed again |
+| lead-magnets | Grants requested with the address deleted with their download log |
+| courses | Enrolments, lesson progress and progress events deleted; course team seats the person holds or owns deleted |
 | payments | **Kept**, untouched: accounting records, ten years (§ 147 AO, § 14b UStG) |
 | invoices | **Kept**, untouched: tax documents, ten years |
 
@@ -289,7 +292,9 @@ Shipped contributors, each active only when its addon's tables exist: `account`,
 `entitlements` (grants held by the address or the user), `leadhub` (contact by address
 or user id, with events, notes, follow-ups, revenue; database driver only),
 `notifications` (items, preferences, digests), `teams` (memberships), `invoices`
-(invoices and lines by buyer address), `activity` (ledger entries under the user id). They read the
+(invoices and lines by buyer address), `activity` (ledger entries under the user id),
+`marketing` (list subscriptions, mails sent, opens and clicks), `lead_magnets` (free
+downloads and their log), `courses` (enrolments, progress, team seats). They read the
 siblings' tables directly, across all brands, and leave out password hashes, tokens and
 IP hashes. A contributor registered later under the same key replaces the shipped one.
 

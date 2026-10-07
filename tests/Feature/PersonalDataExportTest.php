@@ -84,7 +84,7 @@ class PersonalDataExportTest extends TestCase
 
         $this->assertStringEndsWith('.zip', $file['filename']);
         $this->assertEqualsCanonicalizing(
-            ['manifest.json', 'account.json', 'payments.json', 'invoices.json', 'entitlements.json', 'leadhub.json', 'notifications.json', 'teams.json', 'activity.json', 'courses.json'],
+            ['manifest.json', 'account.json', 'payments.json', 'invoices.json', 'entitlements.json', 'leadhub.json', 'notifications.json', 'teams.json', 'activity.json', 'courses.json', 'marketing.json', 'lead_magnets.json'],
             array_keys($files),
         );
 
@@ -105,6 +105,15 @@ class PersonalDataExportTest extends TestCase
         $this->assertCount(1, $files['notifications.json']['preferences']);
         $this->assertSame('Kammerchor Nord', $files['teams.json']['memberships'][0]['team']);
         $this->assertSame([['lesson' => 'Atmung', 'done' => true]], $files['courses.json']['progress']);
+
+        // Newsletter and free downloads, without the confirmation token.
+        $this->assertSame('newsletter', $files['marketing.json']['subscriptions'][0]['list_handle']);
+        $this->assertArrayNotHasKey('token', $files['marketing.json']['subscriptions'][0]);
+        $this->assertCount(1, $files['marketing.json']['messages']);
+        $this->assertCount(1, $files['marketing.json']['message_events']);
+        $this->assertCount(1, $files['lead_magnets.json']['grants']);
+        $this->assertArrayNotHasKey('token_hash', $files['lead_magnets.json']['grants'][0]);
+        $this->assertCount(1, $files['lead_magnets.json']['downloads']);
 
         // The account without its secrets.
         $this->assertSame('sina@example.com', $files['account.json']['email']);

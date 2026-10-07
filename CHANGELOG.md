@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0 — 2026-10-07
+
+Deleting an account on adriangoldner.com left the newsletter subscription, the free downloads
+and the course progress behind.
+
+### Added
+
+- **marketing**: export and erasure of list subscriptions (newsletter and every other list), the
+  campaign mails sent to them with opens and clicks, and the frequency-cap log, by normalised
+  address across brands. Deleted, not unsubscribed. The suppression list stays untouched.
+- **lead-magnets**: export and erasure of the free-download grants requested with the address and
+  their download log. The access grant lead-magnets writes into entitlements goes with the
+  entitlements eraser, as before.
+- **courses**: export and erasure of enrolments, lesson progress and progress events under the
+  user id, and course team seats the person holds or owns.
+
 ## 0.2.0 — 2026-09-25
 
 Findings from the ChoirLive end-to-end check.

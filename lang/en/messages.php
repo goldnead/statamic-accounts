@@ -44,6 +44,9 @@ return [
     'elevation_unavailable' => 'This action needs a confirmation, but the confirmation page is not set up. Please contact the site operator.',
     'section_invoices' => 'Invoices',
     'section_activity' => 'Activity log',
+    'section_marketing' => 'Newsletter',
+    'section_lead_magnets' => 'Free downloads',
+    'section_courses' => 'Courses',
 
     'blocker_subscription' => 'Your subscription ":product" is still running. Cancel it first, then you can delete your account.',
     'blocker_subscription_portal' => 'Your subscription ":product" is still running. Cancel it first in the customer portal (:url), then you can delete your account.',

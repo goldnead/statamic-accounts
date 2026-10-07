@@ -111,6 +111,18 @@ class ErasureTest extends TestCase
         $this->assertSame(1, DB::table('entitlements')->where('subject_id', 'fremd@example.com')->count());
         $this->assertSame(1, DB::table('leadhub_contacts')->where('email', 'fremd@example.com')->count());
         $this->assertSame(1, DB::table('activities')->where('user_id', 'fremd-id')->count());
+        $this->assertSame(1, DB::table('marketing_subscriptions')->where('email', 'fremd@example.com')->count());
+        $this->assertSame(1, DB::table('marketing_messages')->where('email', 'fremd@example.com')->count());
+        $this->assertSame(1, DB::table('marketing_message_events')->count());
+        $this->assertSame(1, DB::table('marketing_mail_log')->count());
+        $this->assertSame(1, DB::table('lead_magnet_grants')->count());
+        $this->assertSame(1, DB::table('lead_magnet_downloads')->count());
+        $this->assertSame(1, DB::table('courses_enrollments')->where('user_id', 'fremd-id')->count());
+        $this->assertSame(1, DB::table('courses_lesson_states')->where('user_id', 'fremd-id')->count());
+        $this->assertSame(1, DB::table('courses_lesson_events')->where('user_id', 'fremd-id')->count());
+        // Her seat in someone else's course team went; the stranger's other seat stays.
+        $this->assertSame(1, DB::table('courses_team_members')->count());
+        $this->assertSame('kollege@example.com', DB::table('courses_team_members')->value('email'));
 
         // Her own team went with her; the one with others stayed, without her.
         $this->assertSame(0, DB::table('teams')->where('name', 'Kammerchor Nord')->count());
@@ -120,6 +132,9 @@ class ErasureTest extends TestCase
         $erasure = $request->fresh()->meta['erasure'];
         $this->assertSame(2, $erasure['entitlements']['deleted']['entitlements']);
         $this->assertSame(1, $erasure['leadhub']['deleted']['contacts']);
+        $this->assertSame(['subscriptions' => 1, 'messages' => 1, 'message_events' => 1, 'mail_log' => 1], $erasure['marketing']['deleted']);
+        $this->assertSame(['grants' => 1, 'downloads' => 1], $erasure['lead_magnets']['deleted']);
+        $this->assertSame(['enrollments' => 1, 'lesson_states' => 1, 'lesson_events' => 1, 'team_seats' => 2], $erasure['courses']['deleted']);
         $this->assertSame(1, $erasure['payments']['retained']['payments']);
         $this->assertSame(1, $erasure['invoices']['retained']['invoices']);
         $this->assertNotEmpty($erasure['payments']['note']);
