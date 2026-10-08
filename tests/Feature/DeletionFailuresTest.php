@@ -10,6 +10,7 @@ use Goldnead\Accounts\Support\AccountMailer;
 use Goldnead\Accounts\Tests\Concerns\DeletionScenario;
 use Goldnead\Accounts\Tests\TestCase;
 use Goldnead\Activity\Facades\Activity;
+use Goldnead\StatamicPayments\Support\Catalogue;
 use Goldnead\StatamicPayments\Support\Subscriptions;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\DB;
@@ -200,5 +201,29 @@ class DeletionFailuresTest extends TestCase
         Accounts::deletion()->purgeDue();
 
         Mail::assertSent(AccountMail::class, fn ($m) => $m->templateKey === 'deletion_blocked' && str_contains($m->htmlBody, '30 Tage'));
+    }
+
+    #[Test]
+    public function the_blocked_mail_links_the_portal_and_names_the_product(): void
+    {
+        Mail::fake();
+        app()->setLocale('de');
+        config()->set('accounts.deletion.portal_url', 'https://example.com/konto');
+        $user = $this->customer();
+        DB::table('subscriptions')->update(['product' => 'offer:choiraccelerator-raten']);
+        Catalogue::$names = ['offer:choiraccelerator-raten' => 'ChoirAccelerator'];
+        $this->endSubscriptions();
+        Accounts::deletion()->request($user);
+        // A new subscription during the grace period.
+        DB::table('subscriptions')->where('email', 'sina@example.com')->update(['status' => 'active']);
+        $this->travel(15)->days();
+
+        Accounts::deletion()->purgeDue();
+        Catalogue::$names = [];
+
+        Mail::assertSent(AccountMail::class, fn ($m) => $m->templateKey === 'deletion_blocked'
+            && str_contains($m->htmlBody, '<a href="https://example.com/konto">https://example.com/konto</a>')
+            && str_contains($m->htmlBody, 'ChoirAccelerator')
+            && ! str_contains($m->htmlBody, 'offer:choiraccelerator-raten'));
     }
 }

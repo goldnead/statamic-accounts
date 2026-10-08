@@ -35,6 +35,8 @@ class PaymentsContributor extends TableContributor implements ErasesPersonalData
 
     public const SUBSCRIPTIONS_SERVICE = 'Goldnead\StatamicPayments\Support\Subscriptions';
 
+    public const CATALOGUE = 'Goldnead\StatamicPayments\Support\Catalogue';
+
     public function key(): string
     {
         return 'payments';
@@ -84,7 +86,30 @@ class PaymentsContributor extends TableContributor implements ErasesPersonalData
     {
         $rows = $this->rows('subscriptions', fn (Builder $q) => $this->whereEmail($q, 'email', $user)->whereIn('status', self::RUNNING));
 
-        return array_map(fn (array $row) => ['id' => (int) $row['id'], 'product' => (string) $row['product']], $rows);
+        return array_map(fn (array $row) => ['id' => (int) $row['id'], 'product' => $this->productName((string) $row['product'])], $rows);
+    }
+
+    /**
+     * What the person knows the product as. The column holds a handle
+     * (`offer:choiraccelerator-raten`); payments' catalogue knows its name,
+     * also for things another addon resolves (an offer). Without a name the
+     * handle stays: a blocker with a raw handle still beats none.
+     */
+    protected function productName(string $handle): string
+    {
+        if ($handle === '' || ! class_exists(self::CATALOGUE)) {
+            return $handle;
+        }
+
+        try {
+            $product = app(self::CATALOGUE)->find($handle);
+        } catch (Throwable) {
+            return $handle;
+        }
+
+        return is_array($product) && is_string($product['name'] ?? null) && trim($product['name']) !== ''
+            ? trim($product['name'])
+            : $handle;
     }
 
     public function blockers(User $user, string $audience = 'customer'): array

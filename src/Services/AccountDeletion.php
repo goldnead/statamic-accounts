@@ -357,13 +357,27 @@ class AccountDeletion
         return (int) ($request->meta['subscriptions_cancelled'] ?? 0);
     }
 
+    /**
+     * A reason as HTML: escaped, with a web address in it made a link (the
+     * customer portal). A trailing full stop, comma or bracket is not part of
+     * the address.
+     */
+    protected function linked(string $reason): string
+    {
+        return (string) preg_replace_callback(
+            '~https?://[^\s<>"\')]+[^\s<>"\').,;:!?]~u',
+            fn (array $m) => '<a href="'.$m[0].'">'.$m[0].'</a>',
+            e($reason),
+        );
+    }
+
     protected function block(AccountRequest $request, User $user, array $reasons): void
     {
         if ($request->isBlocked()) {
             return;
         }
 
-        $list = '<ul>'.implode('', array_map(fn (string $reason) => '<li>'.e($reason).'</li>', $reasons)).'</ul>';
+        $list = '<ul>'.implode('', array_map(fn (string $reason) => '<li>'.$this->linked($reason).'</li>', $reasons)).'</ul>';
 
         // The mail first: `blocked` means "told". If it cannot be sent, the
         // exception leaves the request pending and the next run tries again.
