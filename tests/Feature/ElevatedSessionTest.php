@@ -7,8 +7,10 @@ use Goldnead\Accounts\Facades\Accounts;
 use Goldnead\Accounts\Services\Impersonation;
 use Goldnead\Accounts\Tests\TestCase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Statamic\Facades\User;
+use Statamic\Notifications\ElevatedSessionVerificationCode;
 use Statamic\Testing\Concerns\ElevatesSessions;
 
 /**
@@ -139,6 +141,62 @@ class ElevatedSessionTest extends TestCase
             ->assertSee('name="verification_code"', false)
             ->assertSee('code@example.com')
             ->assertSee(route('statamic.elevated-session.resend-code'), false);
+    }
+
+    #[Test]
+    public function an_account_with_a_password_can_ask_for_a_code_instead(): void
+    {
+        Notification::fake();
+        config(['statamic.users.elevated_sessions_url' => '/!/statamic-accounts/confirm']);
+        // Buyers who sign in by link often hold a placeholder password nobody knows.
+        $user = $this->makeUser();
+
+        $this->actingAs($user)->from('/konto')->post(route('statamic.accounts.deletion.request'));
+
+        // The password form offers the way out.
+        $this->get(route('statamic.accounts.confirm'))
+            ->assertOk()
+            ->assertSee('name="password"', false)
+            ->assertSee(route('statamic.accounts.confirm.code'), false);
+        Notification::assertNothingSent();
+
+        // It mails a code and shows the code field, with a way back.
+        $this->get(route('statamic.accounts.confirm.code'))
+            ->assertRedirect(route('statamic.accounts.confirm', ['by' => 'code']));
+        Notification::assertSentTo($user, ElevatedSessionVerificationCode::class);
+
+        $this->get(route('statamic.accounts.confirm', ['by' => 'code']))
+            ->assertOk()
+            ->assertSee('name="verification_code"', false)
+            ->assertDontSee('name="password"', false)
+            ->assertSee(route('statamic.accounts.confirm'), false);
+
+        // The mailed code confirms the deletion; core checks it.
+        $code = session('statamic_elevated_session_verification_code.code');
+        $this->post(route('statamic.elevated-session.confirm'), ['verification_code' => $code])
+            ->assertRedirect(route('statamic.accounts.resume'));
+        $this->get(route('statamic.accounts.resume'))->assertRedirect('/konto');
+        $this->assertNotNull(Accounts::deletion()->pending($user));
+    }
+
+    #[Test]
+    public function the_code_page_for_a_password_account_resends_and_never_leaks_the_code(): void
+    {
+        Notification::fake();
+        $user = $this->makeUser();
+
+        $this->actingAs($user)->get(route('statamic.accounts.confirm', ['by' => 'code']))
+            ->assertOk()
+            ->assertSee('name="verification_code"', false);
+        Notification::assertSentToTimes($user, ElevatedSessionVerificationCode::class, 1);
+
+        // A wrong code does not elevate.
+        $this->post(route('statamic.elevated-session.confirm'), ['verification_code' => 'falsch'])
+            ->assertSessionHasErrors('verification_code', null, 'user.elevated_session');
+        $this->assertFalse(request()->hasElevatedSession());
+
+        $this->get(route('statamic.accounts.confirm.code'))->assertRedirect();
+        Notification::assertSentToTimes($user, ElevatedSessionVerificationCode::class, 2);
     }
 
     #[Test]

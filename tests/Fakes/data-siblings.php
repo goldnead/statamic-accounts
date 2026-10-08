@@ -33,6 +33,23 @@ namespace Goldnead\StatamicPayments\Support {
     use Goldnead\StatamicPayments\Models\Subscription;
     use Illuminate\Support\Facades\DB;
 
+    if (! class_exists(Catalogue::class)) {
+        /**
+         * payments' `Catalogue::find(handle)`: the name of a product, also for
+         * what another addon resolves (an offer). Tests fill `$names`.
+         */
+        class Catalogue
+        {
+            /** @var array<string, string> */
+            public static array $names = [];
+
+            public function find(string $handle): ?array
+            {
+                return isset(self::$names[$handle]) ? ['name' => self::$names[$handle]] : null;
+            }
+        }
+    }
+
     if (! class_exists(Subscriptions::class)) {
         /**
          * payments' `Subscriptions::cancel(Subscription): bool`: tells the

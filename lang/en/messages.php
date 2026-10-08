@@ -61,6 +61,8 @@ return [
     'confirm_code_label' => 'Code from the email',
     'confirm_submit' => 'Confirm',
     'confirm_resend' => 'Send a new code',
+    'confirm_use_code' => 'Send a code by email instead',
+    'confirm_use_password' => 'Confirm with a password instead',
     'confirm_cancel' => 'Cancel',
     'confirm_passkey_unsupported' => 'Your account can only be confirmed with a passkey, which this page cannot do. Please contact the site owner.',
     'offers_pools_note' => 'Seats the person bought for others stay with those others, without the buyer\'s name and address. The management link no longer works.',

@@ -50,6 +50,12 @@
             @if ($method === 'verification_code')
                 <a href="{{ $resend_url }}">{{ __('accounts::messages.confirm_resend') }}</a>
             @endif
+            @if ($code_url)
+                <a href="{{ $code_url }}">{{ __('accounts::messages.confirm_use_code') }}</a>
+            @endif
+            @if ($password_url)
+                <a href="{{ $password_url }}">{{ __('accounts::messages.confirm_use_password') }}</a>
+            @endif
             <a href="{{ $cancel_url }}">{{ __('accounts::messages.confirm_cancel') }}</a>
         </p>
     @endif

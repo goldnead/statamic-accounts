@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.5.0 — 2026-10-08
+
+Found while walking through account deletion on adriangoldner.com: buyers who sign in by link
+could not confirm, and the subscription blocker spoke in handles.
+
+### Added
+
+- **A code instead of the password.** The confirmation page offers "send a code by email
+  instead" to an account that has a password (`?by=code`, `statamic.accounts.confirm.code`),
+  with a way back. Accounts created for a buyer carry a placeholder password nobody knows;
+  core would only ask for that. Core's confirmation accepts the mailed code from any
+  account and still checks it.
+
+### Fixed
+
+- **The subscription blocker names the product.** It showed the handle
+  (`offer:choiraccelerator-raten`); it now asks payments' catalogue for the name
+  (also for offers) and keeps the handle only when there is none.
+- **The portal address in the "deletion blocked" mail is a link** (it was plain text).
+
 ## 0.4.0 — 2026-10-07
 
 Deleting an account on adriangoldner.com still left certificates, coaching rooms, the inbox,

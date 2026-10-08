@@ -54,6 +54,11 @@ Route::name('accounts.')->group(function () {
     Route::get('confirm', [ConfirmController::class, 'show'])
         ->name('confirm');
 
+    // For an account with a password: mail a code instead.
+    Route::get('confirm/code', [ConfirmController::class, 'sendCode'])
+        ->middleware('throttle:6,1')
+        ->name('confirm.code');
+
     // Where core's confirmation page returns after a form needed it: runs
     // the action the form had asked for (kept in the session), once.
     Route::get('resume', [AccountController::class, 'resume'])

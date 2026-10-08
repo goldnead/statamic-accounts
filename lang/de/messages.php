@@ -61,6 +61,8 @@ return [
     'confirm_code_label' => 'Code aus der E-Mail',
     'confirm_submit' => 'Bestätigen',
     'confirm_resend' => 'Neuen Code schicken',
+    'confirm_use_code' => 'Stattdessen einen Code per E-Mail schicken',
+    'confirm_use_password' => 'Lieber mit Passwort bestätigen',
     'confirm_cancel' => 'Abbrechen',
     'confirm_passkey_unsupported' => 'Dein Konto lässt sich nur mit einem Passkey bestätigen, und das geht auf dieser Seite nicht. Bitte melde dich beim Betreiber.',
     'offers_pools_note' => 'Plätze, die die Person für andere gekauft hat, bleiben für diese anderen bestehen, ohne Name und Adresse der Käuferin oder des Käufers. Der Verwaltungslink gilt nicht mehr.',

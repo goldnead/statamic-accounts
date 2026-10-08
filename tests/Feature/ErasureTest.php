@@ -9,6 +9,7 @@ use Goldnead\Accounts\Models\AccountRequest;
 use Goldnead\Accounts\Tests\Concerns\SeedsSiblingTables;
 use Goldnead\Accounts\Tests\Fakes\ActivityAnonymizeCommand;
 use Goldnead\Accounts\Tests\TestCase;
+use Goldnead\StatamicPayments\Support\Catalogue;
 use Goldnead\StatamicPayments\Support\Subscriptions;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
@@ -185,6 +186,33 @@ class ErasureTest extends TestCase
 
         $this->assertNull(Accounts::deletion()->pending($user));
         Mail::assertNothingSent();
+    }
+
+    #[Test]
+    public function the_subscription_blocker_names_the_product_not_its_handle(): void
+    {
+        Mail::fake();
+        config()->set('accounts.deletion.portal_url', 'https://example.com/konto');
+        $user = $this->seededCustomer();
+        DB::table('subscriptions')->update(['product' => 'offer:choiraccelerator-raten']);
+        Catalogue::$names = ['offer:choiraccelerator-raten' => 'ChoirAccelerator'];
+
+        try {
+            Accounts::deletion()->request($user);
+            $this->fail('A running subscription must block the deletion.');
+        } catch (AccountException $e) {
+            $this->assertStringContainsString('ChoirAccelerator', $e->getMessage());
+            $this->assertStringNotContainsString('offer:choiraccelerator-raten', $e->getMessage());
+        } finally {
+            Catalogue::$names = [];
+        }
+
+        // No name known: the handle stays, nothing breaks.
+        try {
+            Accounts::deletion()->request($user);
+        } catch (AccountException $e) {
+            $this->assertStringContainsString('offer:choiraccelerator-raten', $e->getMessage());
+        }
     }
 
     #[Test]

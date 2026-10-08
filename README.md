@@ -132,6 +132,9 @@ page cannot do that; keep core's page on such a site. `elevated` tells a templat
 sessions switched off in Statamic there is no second confirmation, as for core's own
 sensitive actions.
 
+An account with a password can ask for a code by email instead (link on the page, `?by=code`):
+people who sign in by link often hold a placeholder password they do not know.
+
 **While an admin is signed in as the customer** (`locked`), all three answer 403: they
 are the person's own decisions. The services refuse too (`AccountException` with
 `field = impersonation`), so an API layer cannot skip it.
