@@ -132,7 +132,14 @@ class AccountDeletion
                 'action_url' => $this->cancelUrl($request),
             ]);
         } catch (Throwable $e) {
-            $request->delete();
+            try {
+                $request->delete();
+            } catch (Throwable $cleanup) {
+                Log::error('statamic-accounts: the failed deletion request could not be removed again.', [
+                    'request' => $request->id,
+                    'exception' => $cleanup::class,
+                ]);
+            }
 
             throw $e;
         }
@@ -346,7 +353,7 @@ class AccountDeletion
         } catch (Throwable $e) {
             Log::error('statamic-accounts: a step after the commit of an account deletion failed; the account is deleted, the request is completed.', [
                 'request' => $request->id,
-                'exception' => $e,
+                'exception' => $e::class,
             ]);
         }
     }

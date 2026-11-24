@@ -152,6 +152,7 @@ class DeletionFailuresTest extends TestCase
             // expected
         }
 
+        $this->assertSame(0, AccountRequest::query()->count());
         $this->assertNull(Accounts::deletion()->pending($user), 'No open request without a withdraw link in anybody\'s mailbox.');
     }
 

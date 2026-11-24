@@ -159,7 +159,7 @@ class EmailChange
             } catch (Throwable $e) {
                 Log::error('statamic-accounts: the notice to the old address after a confirmed email change could not be sent.', [
                     'request' => $request->id,
-                    'exception' => $e,
+                    'exception' => $e::class,
                 ]);
             }
         }
