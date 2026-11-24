@@ -6,8 +6,10 @@ use Goldnead\Accounts\Events\EmailChanged;
 use Goldnead\Accounts\Events\EmailChangeRequested;
 use Goldnead\Accounts\Facades\Accounts;
 use Goldnead\Accounts\Mail\AccountMail;
+use Goldnead\Accounts\Support\AccountMailer;
 use Goldnead\Accounts\Tests\TestCase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Test;
 use Statamic\Facades\Antlers;
@@ -58,6 +60,27 @@ class EmailChangeTest extends TestCase
         Event::assertDispatched(EmailChanged::class, fn ($e) => $e->payload() === [
             'user_id' => (string) $user->id(), 'email' => 'neu@example.com', 'name' => 'Sina Sänger', 'old_email' => 'sina@example.com',
         ]);
+    }
+
+    #[Test]
+    public function a_failing_notice_to_the_old_address_does_not_undo_the_confirmed_change(): void
+    {
+        Mail::fake();
+        $user = $this->makeUser();
+
+        $this->actingAs($user)
+            ->post(route('statamic.accounts.email.change'), ['email' => 'neu@example.com', 'password' => 'geheim-123']);
+        $link = $this->linkFromMail();
+
+        Event::fake([EmailChanged::class]);
+        Log::spy();
+        $this->mock(AccountMailer::class)->shouldReceive('send')->andThrow(new \RuntimeException('smtp down'));
+
+        $this->get($link)->assertSessionHas('accounts.status.kind', 'success');
+
+        $this->assertSame('neu@example.com', User::find($user->id())->email());
+        Event::assertDispatched(EmailChanged::class);
+        Log::shouldHaveReceived('error')->withArgs(fn ($message) => str_contains($message, 'old address'));
     }
 
     #[Test]

@@ -2,6 +2,7 @@
 
 namespace Goldnead\Accounts\Tests\Feature;
 
+use Goldnead\Accounts\Events\AccountDeleted;
 use Goldnead\Accounts\Events\AccountDeleting;
 use Goldnead\Accounts\Facades\Accounts;
 use Goldnead\Accounts\Mail\AccountMail;
@@ -133,6 +134,45 @@ class DeletionFailuresTest extends TestCase
 
         $this->assertSame(0, Accounts::deletion()->purgeDue());
         $this->assertSame(AccountRequest::STATUS_PENDING, $request->fresh()->status, 'Not blocked: the next run tries the mail again.');
+    }
+
+    #[Test]
+    public function a_failed_scheduled_mail_leaves_no_open_request_behind(): void
+    {
+        Mail::fake();
+        $user = $this->customer();
+        $this->endSubscriptions();
+
+        $this->mock(AccountMailer::class)->shouldReceive('send')->once()->andThrow(new RuntimeException('smtp down'));
+
+        try {
+            Accounts::deletion()->request($user);
+            $this->fail('The failed mail must reach the caller.');
+        } catch (RuntimeException) {
+            // expected
+        }
+
+        $this->assertNull(Accounts::deletion()->pending($user), 'No open request without a withdraw link in anybody\'s mailbox.');
+    }
+
+    #[Test]
+    public function a_mail_failing_after_the_commit_does_not_hide_that_the_account_is_gone(): void
+    {
+        Mail::fake();
+        $request = $this->dueRequest();
+        $userId = $request->user_id;
+        Log::spy();
+        Event::fake([AccountDeleted::class]);
+
+        $this->mock(AccountMailer::class)->shouldReceive('send')->andThrow(new RuntimeException('smtp down'));
+
+        $this->assertSame(1, Accounts::deletion()->purgeDue());
+
+        $this->assertNull(User::find($userId));
+        $this->assertSame(AccountRequest::STATUS_COMPLETED, $request->fresh()->status);
+        Event::assertDispatched(AccountDeleted::class);
+        Log::shouldNotHaveReceived('error', fn ($message) => str_contains($message, 'stays scheduled'));
+        Log::shouldHaveReceived('error')->withArgs(fn ($message) => str_contains($message, 'after the commit'));
     }
 
     #[Test]

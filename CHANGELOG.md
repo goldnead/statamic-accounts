@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Deletion request: if the "deletion scheduled" mail cannot be sent, the request is removed again and the error reaches the caller. Before, the open request stayed and a retry returned it without a mail, so the person never got the withdraw link.
+- Deletion purge: a failing mail, event listener or ledger entry after the commit no longer aborts the run with a misleading "stays scheduled" log. Each step is logged as an error on its own; the account is deleted and the request completed.
+- Email change: a failing notice to the old address after a confirmed change no longer ends in an error page and no longer swallows the `EmailChanged` event. It is logged as an error.
+
 ## 0.5.1 — 2026-10-17
 
 ### Changed
