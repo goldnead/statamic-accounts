@@ -121,12 +121,28 @@ class AccountDeletion
 
         $due = $request->due_at ?? now();
 
-        $this->mailer->send('deletion_scheduled', (string) $user->email(), [
-            'user' => ['name' => $user->name(), 'email' => $user->email()],
-            'scheduled_for' => $due->isoFormat('LL'),
-            'grace_days' => $this->graceDays(),
-            'action_url' => $this->cancelUrl($request),
-        ]);
+        // The mail carries the only withdraw link. If it cannot be sent, the
+        // request must not stay open: a retry would find it and return it
+        // without a mail, and the person would never get the link.
+        try {
+            $this->mailer->send('deletion_scheduled', (string) $user->email(), [
+                'user' => ['name' => $user->name(), 'email' => $user->email()],
+                'scheduled_for' => $due->isoFormat('LL'),
+                'grace_days' => $this->graceDays(),
+                'action_url' => $this->cancelUrl($request),
+            ]);
+        } catch (Throwable $e) {
+            try {
+                $request->delete();
+            } catch (Throwable $cleanup) {
+                Log::error('statamic-accounts: the failed deletion request could not be removed again.', [
+                    'request' => $request->id,
+                    'exception' => $cleanup::class,
+                ]);
+            }
+
+            throw $e;
+        }
 
         AccountDeletionRequested::dispatch((string) $user->id(), (string) $user->email(), $user->name(), $due->toIso8601String());
 
@@ -313,18 +329,33 @@ class AccountDeletion
             return $results;
         });
 
-        $this->mailer->send('account_deleted', $email, [
+        // The account is gone and the request completed: whatever fails from
+        // here on must not look like "stays scheduled". Each step is tried on
+        // its own and a failure is logged as an error.
+        $this->afterCommit($request, fn () => $this->mailer->send('account_deleted', $email, [
             'user' => ['name' => $name, 'email' => $email],
-        ]);
+        ]));
 
-        AccountDeleted::dispatch($id, $email, $name);
+        $this->afterCommit($request, fn () => AccountDeleted::dispatch($id, $email, $name));
 
-        $this->activity->record('accounts.deleted', [
+        $this->afterCommit($request, fn () => $this->activity->record('accounts.deleted', [
             'request_id' => $request->id,
             'erased' => array_keys($results),
-        ], null, 'accounts:deleted:request:'.$request->id);
+        ], null, 'accounts:deleted:request:'.$request->id));
 
         return true;
+    }
+
+    protected function afterCommit(AccountRequest $request, callable $step): void
+    {
+        try {
+            $step();
+        } catch (Throwable $e) {
+            Log::error('statamic-accounts: a step after the commit of an account deletion failed; the account is deleted, the request is completed.', [
+                'request' => $request->id,
+                'exception' => $e::class,
+            ]);
+        }
     }
 
     /**

@@ -10,8 +10,10 @@ use Goldnead\Accounts\Models\AccountRequest;
 use Goldnead\Accounts\Support\AccountMailer;
 use Goldnead\Accounts\Support\Users;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Statamic\Auth\User;
+use Throwable;
 
 /**
  * Moving an account to a new address.
@@ -146,11 +148,20 @@ class EmailChange
         $request->resolve(AccountRequest::STATUS_COMPLETED);
 
         if (config('accounts.email_change.notify_old_address', true)) {
-            $this->mailer->send('email_changed', $oldEmail, [
-                'user' => ['name' => $user->name(), 'email' => $newEmail],
-                'new_email' => $newEmail,
-                'old_email' => $oldEmail,
-            ]);
+            // The change is saved and confirmed. A mail that cannot be sent
+            // must not turn this into an error page or swallow the event.
+            try {
+                $this->mailer->send('email_changed', $oldEmail, [
+                    'user' => ['name' => $user->name(), 'email' => $newEmail],
+                    'new_email' => $newEmail,
+                    'old_email' => $oldEmail,
+                ]);
+            } catch (Throwable $e) {
+                Log::error('statamic-accounts: the notice to the old address after a confirmed email change could not be sent.', [
+                    'request' => $request->id,
+                    'exception' => $e::class,
+                ]);
+            }
         }
 
         EmailChanged::dispatch((string) $user->id(), $newEmail, $user->name(), $oldEmail);
