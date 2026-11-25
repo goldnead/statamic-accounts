@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\MessageBag;
 use Statamic\Auth\User as UserContract;
@@ -52,7 +53,15 @@ class AccountController extends Controller
     public function resendVerification(Request $request, EmailVerification $verification): RedirectResponse
     {
         $user = $this->user();
-        $verification->send($user);
+
+        // False: the address is confirmed already and nothing was sent.
+        if (! $verification->send($user)) {
+            Log::warning('statamic-accounts: a verification resend was asked for a confirmed address; nothing was sent.', [
+                'user' => (string) $user->id(),
+            ]);
+
+            return $this->failure($request, 'verify', 'verify', __('accounts::messages.already_verified'));
+        }
 
         return $this->success($request, 'verify', __('accounts::messages.verification_sent'));
     }

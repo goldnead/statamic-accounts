@@ -17,9 +17,16 @@ class PurgeDeletedAccounts extends Command
 
     public function handle(AccountDeletion $deletion): int
     {
-        $count = $deletion->purgeDue();
+        $report = $deletion->purge();
 
-        $this->info(trans_choice('accounts::messages.purged', $count, ['count' => $count]));
+        $this->info(trans_choice('accounts::messages.purged', $report['deleted'], ['count' => $report['deleted']]));
+
+        // The rest was deleted all the same; the run still says that some did not go.
+        if ($report['failed'] > 0) {
+            $this->error(trans_choice('accounts::messages.purge_failed', $report['failed'], ['count' => $report['failed']]));
+
+            return self::FAILURE;
+        }
 
         return self::SUCCESS;
     }

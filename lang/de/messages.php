@@ -81,4 +81,5 @@ return [
     'activity_note' => 'Einträge im Protokoll unter dieser Nutzer-ID sind anonymisiert. Einträge anderer Personen (etwa eines Admins), die diese Person erwähnen, erreicht die Anonymisierung von Activity nicht.',
 
     'purged' => '{0} Kein Konto war zur Löschung fällig.|{1} :count Konto gelöscht.|[2,*] :count Konten gelöscht.',
+    'purge_failed' => '{1} Ein Konto konnte nicht gelöscht werden. Details im Log.|[2,*] :count Konten konnten nicht gelöscht werden. Details im Log.',
 ];

@@ -218,27 +218,44 @@ class AccountDeletion
      */
     public function purgeDue(): int
     {
+        return $this->purge()['deleted'];
+    }
+
+    /**
+     * What purgeDue() does, with the failures counted as well: `failed` is
+     * the number of deletions that threw. A blocked one is not a failure, the
+     * person was told.
+     *
+     * @return array{deleted: int, failed: int}
+     */
+    public function purge(): array
+    {
         $deleted = 0;
+        $failed = 0;
 
         AccountRequest::query()
             ->ofType(AccountRequest::TYPE_DELETION)
             ->open()
             ->where('due_at', '<=', now())
             ->orderBy('id')
-            ->each(function (AccountRequest $request) use (&$deleted) {
+            ->each(function (AccountRequest $request) use (&$deleted, &$failed) {
                 try {
                     if ($this->deleteFor($request)) {
                         $deleted++;
                     }
                 } catch (Throwable $e) {
+                    $failed++;
+
                     Log::error('statamic-accounts: deleting an account failed; it stays scheduled.', [
                         'request' => $request->id,
                         'exception' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
                     ]);
                 }
             });
 
-        return $deleted;
+        return ['deleted' => $deleted, 'failed' => $failed];
     }
 
     protected function deleteFor(AccountRequest $request): bool
