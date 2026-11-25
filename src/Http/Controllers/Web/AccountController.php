@@ -118,7 +118,11 @@ class AccountController extends Controller
         $request->session()->forget(self::PENDING);
 
         if ((int) ($pending['at'] ?? 0) < now()->subMinutes(self::PENDING_MINUTES)->getTimestamp()) {
-            return redirect($returnTo);
+            // The person confirmed, then nothing happened. Say that, or they
+            // land back on the page and think it went through.
+            return in_array($pending['action'], [self::DELETE, self::CHANGE_EMAIL], true)
+                ? $this->failure($returnTo, $pending['action'], 'action', __('accounts::messages.confirmation_expired'))
+                : redirect($returnTo);
         }
 
         return match ($pending['action']) {
@@ -162,7 +166,9 @@ class AccountController extends Controller
 
         abort_if($this->impersonation->active(), 403, __('accounts::messages.impersonation_locked'));
 
-        $emailChange->cancel($user);
+        if (! $emailChange->cancel($user)) {
+            return $this->failure($request, 'change_email', 'email', __('accounts::messages.nothing_to_withdraw'));
+        }
 
         return $this->success($request, 'change_email', __('accounts::messages.email_change_cancelled'));
     }
@@ -174,7 +180,10 @@ class AccountController extends Controller
         abort_if($this->impersonation->active(), 403, __('accounts::messages.impersonation_locked'));
 
         $open = $deletion->pending($user);
-        $deletion->cancel($user);
+
+        if (! $deletion->cancel($user)) {
+            return $this->failure($request, 'delete', 'request', __('accounts::messages.nothing_to_withdraw'));
+        }
 
         $message = __('accounts::messages.deletion_cancelled');
 

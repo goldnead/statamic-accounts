@@ -27,6 +27,8 @@ return [
     'email_unchanged' => 'Das ist schon deine Adresse.',
     'email_taken' => 'Ein anderes Konto nutzt diese Adresse bereits.',
     'link_invalid' => 'Dieser Link gilt nicht mehr. Fordere einen neuen an.',
+    'confirmation_expired' => 'Die Bestätigung ist abgelaufen. Starte die Aktion noch einmal.',
+    'nothing_to_withdraw' => 'Es gibt nichts zurückzuziehen.',
 
     'verification_sent' => 'Wir haben dir einen Link geschickt, mit dem du deine Adresse bestätigst.',
     'verification_required' => 'Bitte bestätige zuerst deine E-Mail-Adresse.',

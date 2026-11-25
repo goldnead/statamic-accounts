@@ -27,6 +27,8 @@ return [
     'email_unchanged' => 'That is already your address.',
     'email_taken' => 'Another account already uses this address.',
     'link_invalid' => 'This link is no longer valid. Request a new one.',
+    'confirmation_expired' => 'The confirmation has expired. Start the action again.',
+    'nothing_to_withdraw' => 'There is nothing to withdraw.',
 
     'verification_sent' => 'We sent you a link to confirm your address.',
     'verification_required' => 'Please confirm your email address first.',

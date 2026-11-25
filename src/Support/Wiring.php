@@ -8,6 +8,7 @@ use Goldnead\Accounts\Integrations\EmailTemplates\RegistersTemplates as Register
 use Goldnead\Accounts\Integrations\WebhookManager\WebhookManagerBridge;
 use Goldnead\Accounts\PersonalData\PersonalDataRegistry;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -111,7 +112,9 @@ class Wiring
         try {
             $registry = app(RegistersTemplatesBinding::BINDING);
             $groups = method_exists($registry, 'byAddon') ? $registry->byAddon() : [];
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::warning('statamic-accounts: the core mail list could not be read, the wiring page shows none.', ['exception' => $e::class, 'message' => $e->getMessage()]);
+
             return [];
         }
 
@@ -163,7 +166,9 @@ class Wiring
             }
 
             return (int) DB::table('automation_nodes')->where('type', $handle)->distinct()->count('automation_id');
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::warning('statamic-accounts: the automation count for the wiring page failed, shown as unknown.', ['handle' => $handle, 'exception' => $e::class, 'message' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -180,7 +185,9 @@ class Wiring
             }
 
             return $count;
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::warning('statamic-accounts: the webhook count for the wiring page failed, shown as unknown.', ['handle' => $handle, 'exception' => $e::class, 'message' => $e->getMessage()]);
+
             return null;
         }
     }

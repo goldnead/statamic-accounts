@@ -4,14 +4,20 @@ namespace Goldnead\Accounts\Tests\Feature;
 
 use Goldnead\Accounts\Events\AccountDeleting;
 use Goldnead\Accounts\Facades\Accounts;
+use Goldnead\Accounts\Http\Controllers\Web\AccountController;
+use Goldnead\Accounts\Integrations\EmailTemplates\RegistersTemplates as RegistersTemplatesBinding;
 use Goldnead\Accounts\Mail\AccountMail;
 use Goldnead\Accounts\Models\AccountRequest;
+use Goldnead\Accounts\Support\Wiring;
 use Goldnead\Accounts\Tests\Concerns\DeletionScenario;
 use Goldnead\Accounts\Tests\TestCase;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionMethod;
 use RuntimeException;
 use Statamic\Events\UserDeleting;
 use Statamic\Facades\User;
@@ -100,5 +106,74 @@ class StilleFehlerAccountsTest extends TestCase
         $this->assertCount(1, $logged);
         $this->assertArrayHasKey('file', $logged[0], 'The failure log names no file.');
         $this->assertArrayHasKey('line', $logged[0], 'The failure log names no line.');
+    }
+
+    #[Test]
+    public function an_expired_confirmation_says_so_instead_of_redirecting_silently(): void
+    {
+        $user = $this->makeUser();
+
+        $this->actingAs(User::find($user->id()))
+            ->withSession([AccountController::PENDING => [
+                'action' => 'delete',
+                'return' => '/account',
+                'at' => now()->subHours(2)->getTimestamp(),
+            ]])
+            ->get(route('statamic.accounts.resume'))
+            ->assertRedirect('/account')
+            ->assertSessionHasErrors(['action' => __('accounts::messages.confirmation_expired')], null, 'accounts.delete');
+    }
+
+    #[Test]
+    public function withdrawing_an_email_change_with_nothing_pending_does_not_claim_success(): void
+    {
+        $user = $this->makeUser();
+
+        $this->actingAs(User::find($user->id()))
+            ->post(route('statamic.accounts.email.cancel'))
+            ->assertSessionMissing('accounts.change_email.success')
+            ->assertSessionHasErrors(['email' => __('accounts::messages.nothing_to_withdraw')], null, 'accounts.change_email');
+    }
+
+    #[Test]
+    public function a_failed_automation_count_is_logged_and_reported_as_unknown(): void
+    {
+        Log::spy();
+        Schema::shouldReceive('hasTable')->andThrow(new RuntimeException('schema unavailable'));
+
+        $method = new ReflectionMethod(Wiring::class, 'countAutomations');
+
+        $this->assertNull($method->invoke(app(Wiring::class), 'accounts.deleted'));
+        Log::shouldHaveReceived('warning')->withArgs(fn ($message) => str_contains($message, 'automation'));
+    }
+
+    #[Test]
+    public function a_failed_webhook_count_is_logged_and_reported_as_unknown(): void
+    {
+        Log::spy();
+        Schema::shouldReceive('hasTable')->andThrow(new RuntimeException('schema unavailable'));
+
+        $method = new ReflectionMethod(Wiring::class, 'countWebhooks');
+
+        $this->assertNull($method->invoke(app(Wiring::class), 'accounts.deleted'));
+        Log::shouldHaveReceived('warning')->withArgs(fn ($message) => str_contains($message, 'webhook'));
+    }
+
+    #[Test]
+    public function a_failed_core_mail_lookup_is_logged_not_swallowed(): void
+    {
+        Log::spy();
+        app()->instance(RegistersTemplatesBinding::BINDING, new class
+        {
+            public function byAddon(): array
+            {
+                throw new RuntimeException('registry unavailable');
+            }
+        });
+
+        $method = new ReflectionMethod(Wiring::class, 'coreMails');
+
+        $this->assertSame([], $method->invoke(app(Wiring::class)));
+        Log::shouldHaveReceived('warning')->withArgs(fn ($message) => str_contains($message, 'core mail'));
     }
 }
