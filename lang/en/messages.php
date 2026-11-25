@@ -81,4 +81,5 @@ return [
     'activity_note' => 'Log entries under this user id are anonymised. Entries of other people (an admin, say) that mention this person are beyond the reach of Activity\'s anonymisation.',
 
     'purged' => '{0} No account was due for deletion.|{1} Deleted :count account.|[2,*] Deleted :count accounts.',
+    'purge_failed' => '{1} One account could not be deleted. See the log.|[2,*] :count accounts could not be deleted. See the log.',
 ];
