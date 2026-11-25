@@ -56,7 +56,7 @@ class AccountController extends Controller
 
         // False: the address is confirmed already and nothing was sent.
         if (! $verification->send($user)) {
-            Log::warning('statamic-accounts: a verification resend was asked for a confirmed address; nothing was sent.', [
+            Log::info('statamic-accounts: a verification resend was asked for a confirmed address; nothing was sent.', [
                 'user' => (string) $user->id(),
             ]);
 
